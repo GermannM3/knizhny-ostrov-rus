@@ -16,6 +16,32 @@ const verifyPassword = (password: string, hash: string): boolean => {
   return hashPassword(password) === hash;
 };
 
+// Создание тестового пользователя
+const createTestUser = () => {
+  const users = getUsers();
+  const testEmail = 'germannm@vk.com';
+  
+  // Проверяем, что тестовый пользователь не существует
+  const existingUser = users.find(u => u.email === testEmail);
+  if (existingUser) {
+    console.log('Тестовый пользователь уже существует:', existingUser);
+    return existingUser;
+  }
+  
+  const testUser: User = {
+    id: 'test-user-hermann',
+    email: testEmail,
+    name: 'Герман Кенг',
+    password: hashPassword('Germ@nnM3'),
+    createdAt: new Date()
+  };
+  
+  users.push(testUser);
+  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  console.log('Создан тестовый пользователь:', testUser);
+  return testUser;
+};
+
 // Пользователи
 export const saveUser = (user: Omit<User, 'id' | 'createdAt'>): User => {
   const users = getUsers();
@@ -43,15 +69,34 @@ export const saveUser = (user: Omit<User, 'id' | 'createdAt'>): User => {
 
 export const getUsers = (): User[] => {
   const users = localStorage.getItem(STORAGE_KEYS.USERS);
-  return users ? JSON.parse(users) : [];
+  const parsedUsers = users ? JSON.parse(users) : [];
+  
+  // Создаем тестового пользователя, если список пуст
+  if (parsedUsers.length === 0) {
+    createTestUser();
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+  }
+  
+  return parsedUsers;
 };
 
 export const loginUser = (email: string, password: string): User | null => {
   const users = getUsers();
+  console.log('Попытка входа для:', email);
+  console.log('Доступные пользователи:', users.map(u => ({ email: u.email, name: u.name })));
+  
   const user = users.find(u => u.email === email);
-  if (user && verifyPassword(password, user.password)) {
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-    return user;
+  if (user) {
+    console.log('Пользователь найден:', user.email);
+    const passwordMatch = verifyPassword(password, user.password);
+    console.log('Пароль подходит:', passwordMatch);
+    
+    if (passwordMatch) {
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+      return user;
+    }
+  } else {
+    console.log('Пользователь не найден');
   }
   return null;
 };

@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Book, Home } from 'lucide-react';
+import { Book, Home, Eye, EyeOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { getUsers } from '@/utils/storage';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -69,6 +72,106 @@ const AuthPage = () => {
       setIsLoading(false);
     }
   };
+
+  const handleForgotPassword = () => {
+    if (!formData.email) {
+      toast({
+        title: "Введите email",
+        description: "Сначала введите ваш email адрес.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const users = getUsers();
+    const user = users.find(u => u.email === formData.email);
+    
+    if (user) {
+      // В реальном приложении здесь бы отправлялось письмо
+      toast({
+        title: "Ваш пароль найден!",
+        description: `Пароль для ${formData.email}: Используйте тот же пароль, что вводили при регистрации.`,
+      });
+      
+      console.log('Все зарегистрированные пользователи:', users.map(u => ({
+        email: u.email,
+        name: u.name,
+        id: u.id
+      })));
+    } else {
+      toast({
+        title: "Пользователь не найден",
+        description: "Пользователь с таким email не зарегистрирован.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="flex justify-center mb-4">
+            <Link to="/library">
+              <Button variant="ghost" className="text-gray-300 hover:text-amber-400">
+                <Home className="h-4 w-4 mr-2" />
+                На главную
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center mb-4">
+              <Book className="h-12 w-12 text-amber-400" />
+            </div>
+            <h1 className="text-3xl font-bold gradient-text mb-2">BookCraft</h1>
+            <p className="text-gray-300">Восстановление пароля</p>
+          </div>
+
+          <Card className="glass-card border-white/20">
+            <CardHeader>
+              <CardTitle className="text-white">Забыли пароль?</CardTitle>
+              <CardDescription className="text-gray-300">
+                Введите ваш email для восстановления пароля
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-white">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="example@mail.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handleForgotPassword}
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                >
+                  Восстановить пароль
+                </Button>
+                
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowForgotPassword(false)}
+                    className="text-amber-400 hover:text-amber-300 transition-colors"
+                  >
+                    Вернуться к входу
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -135,15 +238,24 @@ const AuthPage = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-white">Пароль</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  required
-                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    required
+                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               
               <Button 
@@ -155,7 +267,16 @@ const AuthPage = () => {
               </Button>
             </form>
             
-            <div className="mt-4 text-center">
+            <div className="mt-4 space-y-2 text-center">
+              {isLogin && (
+                <button
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-gray-400 hover:text-amber-300 transition-colors block w-full"
+                >
+                  Забыли пароль?
+                </button>
+              )}
+              
               <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-amber-400 hover:text-amber-300 transition-colors"
