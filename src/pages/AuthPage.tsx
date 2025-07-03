@@ -1,12 +1,12 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Book } from 'lucide-react';
+import { Book, Home } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const AuthPage = () => {
@@ -73,6 +73,15 @@ const AuthPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        <div className="flex justify-center mb-4">
+          <Link to="/library">
+            <Button variant="ghost" className="text-gray-300 hover:text-amber-400">
+              <Home className="h-4 w-4 mr-2" />
+              На главную
+            </Button>
+          </Link>
+        </div>
+        
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <Book className="h-12 w-12 text-amber-400" />

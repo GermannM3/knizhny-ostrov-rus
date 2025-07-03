@@ -1,4 +1,3 @@
-
 import { User, Book, Chapter } from '@/types';
 
 const STORAGE_KEYS = {
@@ -72,6 +71,8 @@ export const saveBook = (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>): Bo
   const newBook: Book = {
     ...book,
     id: Date.now().toString(),
+    views: 0,
+    isFavorite: false,
     createdAt: new Date(),
     updatedAt: new Date()
   };
@@ -83,6 +84,20 @@ export const saveBook = (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>): Bo
 export const getBooks = (): Book[] => {
   const books = localStorage.getItem(STORAGE_KEYS.BOOKS);
   return books ? JSON.parse(books) : [];
+};
+
+export const getBookById = (bookId: string): Book | null => {
+  const books = getBooks();
+  return books.find(book => book.id === bookId) || null;
+};
+
+export const incrementBookViews = (bookId: string): void => {
+  const books = getBooks();
+  const bookIndex = books.findIndex(book => book.id === bookId);
+  if (bookIndex !== -1) {
+    books[bookIndex].views = (books[bookIndex].views || 0) + 1;
+    localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
+  }
 };
 
 export const getUserBooks = (userId: string): Book[] => {

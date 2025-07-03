@@ -28,6 +28,57 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   return !isAuthenticated ? <>{children}</> : <Navigate to="/library" />;
 };
 
+const AppRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/auth" element={
+        <PublicRoute>
+          <AuthPage />
+        </PublicRoute>
+      } />
+      <Route path="/library" element={<LibraryPage />} />
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/create" element={
+        <ProtectedRoute>
+          <CreateBook />
+        </ProtectedRoute>
+      } />
+      <Route path="/edit/:id" element={
+        <ProtectedRoute>
+          <EditBook />
+        </ProtectedRoute>
+      } />
+      <Route path="/edit/:bookId/add-chapter" element={
+        <ProtectedRoute>
+          <EditChapter />
+        </ProtectedRoute>
+      } />
+      <Route path="/edit/:bookId/chapter/:chapterId" element={
+        <ProtectedRoute>
+          <EditChapter />
+        </ProtectedRoute>
+      } />
+      <Route path="/read/:id" element={<ReadBook />} />
+      <Route path="/favorites" element={
+        <ProtectedRoute>
+          <FavoritesPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/" element={<Navigate to="/library" />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -35,52 +86,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={
-              <PublicRoute>
-                <AuthPage />
-              </PublicRoute>
-            } />
-            <Route path="/library" element={<LibraryPage />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/create" element={
-              <ProtectedRoute>
-                <CreateBook />
-              </ProtectedRoute>
-            } />
-            <Route path="/edit/:id" element={
-              <ProtectedRoute>
-                <EditBook />
-              </ProtectedRoute>
-            } />
-            <Route path="/edit/:bookId/add-chapter" element={
-              <ProtectedRoute>
-                <EditChapter />
-              </ProtectedRoute>
-            } />
-            <Route path="/edit/:bookId/chapter/:chapterId" element={
-              <ProtectedRoute>
-                <EditChapter />
-              </ProtectedRoute>
-            } />
-            <Route path="/read/:id" element={<ReadBook />} />
-            <Route path="/favorites" element={
-              <ProtectedRoute>
-                <FavoritesPage />
-              </ProtectedRoute>
-            } />
-            <Route path="/profile" element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            } />
-            <Route path="/" element={<Navigate to="/library" />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
