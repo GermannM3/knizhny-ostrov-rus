@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Book, Heart, Plus, LogOut, Menu, X } from 'lucide-react';
+import { Book, Heart, Plus, LogOut, Menu, X, BookOpen, User } from 'lucide-react';
 
 const Navigation = () => {
   const { user, logout } = useAuth();
@@ -11,9 +11,11 @@ const Navigation = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
+    { path: '/library', label: 'Библиотека', icon: BookOpen },
     { path: '/dashboard', label: 'Мои книги', icon: Book },
     { path: '/create', label: 'Создать книгу', icon: Plus },
     { path: '/favorites', label: 'Избранное', icon: Heart },
+    { path: '/profile', label: 'Профиль', icon: User },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -21,7 +23,7 @@ const Navigation = () => {
   return (
     <nav className="glass-card m-4 p-4 sticky top-4 z-50">
       <div className="flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-center space-x-2">
+        <Link to="/library" className="flex items-center space-x-2">
           <Book className="h-8 w-8 text-amber-400" />
           <span className="text-xl font-bold gradient-text">BookCraft</span>
         </Link>
@@ -43,18 +45,23 @@ const Navigation = () => {
             </Link>
           ))}
           
-          <div className="flex items-center space-x-2 text-gray-300">
-            <span>{user?.name}</span>
-          </div>
-          
-          <Button 
-            onClick={logout}
-            variant="ghost" 
-            size="sm"
-            className="text-gray-300 hover:text-red-400"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
+          {user && (
+            <>
+              <div className="flex items-center space-x-2 text-gray-300">
+                <span>{user.name}</span>
+              </div>
+              
+              <Button 
+                onClick={logout}
+                variant="ghost" 
+                size="sm"
+                className="text-gray-300 hover:text-red-400"
+                title="Выход"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -87,19 +94,25 @@ const Navigation = () => {
             </Link>
           ))}
           
-          <div className="flex items-center justify-between pt-2 border-t border-white/20">
-            <div className="flex items-center space-x-2 text-gray-300">
-              <span>{user?.name}</span>
+          {user && (
+            <div className="flex items-center justify-between pt-2 border-t border-white/20">
+              <div className="flex items-center space-x-2 text-gray-300">
+                <span>{user.name}</span>
+              </div>
+              <Button 
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                variant="ghost" 
+                size="sm"
+                className="text-gray-300 hover:text-red-400"
+                title="Выход"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
-            <Button 
-              onClick={logout}
-              variant="ghost" 
-              size="sm"
-              className="text-gray-300 hover:text-red-400"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
+          )}
         </div>
       )}
     </nav>

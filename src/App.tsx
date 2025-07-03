@@ -6,12 +6,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import AuthPage from "./pages/AuthPage";
+import LibraryPage from "./pages/LibraryPage";
 import Dashboard from "./pages/Dashboard";
 import CreateBook from "./pages/CreateBook";
 import EditBook from "./pages/EditBook";
 import EditChapter from "./pages/EditChapter";
 import ReadBook from "./pages/ReadBook";
 import FavoritesPage from "./pages/FavoritesPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +25,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" />;
+  return !isAuthenticated ? <>{children}</> : <Navigate to="/library" />;
 };
 
 const App = () => (
@@ -39,6 +41,7 @@ const App = () => (
                 <AuthPage />
               </PublicRoute>
             } />
+            <Route path="/library" element={<LibraryPage />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
@@ -70,7 +73,12 @@ const App = () => (
                 <FavoritesPage />
               </ProtectedRoute>
             } />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/" element={<Navigate to="/library" />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

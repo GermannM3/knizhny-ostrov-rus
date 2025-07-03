@@ -20,6 +20,13 @@ const verifyPassword = (password: string, hash: string): boolean => {
 // Пользователи
 export const saveUser = (user: Omit<User, 'id' | 'createdAt'>): User => {
   const users = getUsers();
+  
+  // Проверяем, что пользователь с таким email не существует
+  const existingUser = users.find(u => u.email === user.email);
+  if (existingUser) {
+    throw new Error('Пользователь с таким email уже существует');
+  }
+  
   const newUser: User = {
     ...user,
     id: Date.now().toString(),
@@ -28,6 +35,10 @@ export const saveUser = (user: Omit<User, 'id' | 'createdAt'>): User => {
   };
   users.push(newUser);
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  
+  // Автоматически авторизуем пользователя после регистрации
+  localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(newUser));
+  
   return newUser;
 };
 

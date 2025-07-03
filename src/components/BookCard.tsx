@@ -3,7 +3,7 @@ import { Book } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Edit, Trash, Eye } from 'lucide-react';
+import { Heart, Edit, Trash, Eye, BookOpen } from 'lucide-react';
 import { updateBook, deleteBook } from '@/utils/storage';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
@@ -48,7 +48,7 @@ const BookCard = ({ book, onUpdate, showActions = true }: BookCardProps) => {
           {book.status === 'published' ? 'Опубликовано' : 'Черновик'}
         </Badge>
         
-        {showActions && (
+        {showActions && user && (
           <Button
             onClick={toggleFavorite}
             variant="ghost"
@@ -81,34 +81,34 @@ const BookCard = ({ book, onUpdate, showActions = true }: BookCardProps) => {
           </div>
         </div>
 
-        {showActions && (
-          <div className="flex items-center space-x-2 pt-2">
-            <Link to={`/read/${book.id}`} className="flex-1">
-              <Button variant="outline" size="sm" className="w-full">
-                Читать
-              </Button>
-            </Link>
-            
-            {isOwner && (
-              <>
-                <Link to={`/edit/${book.id}`}>
-                  <Button variant="outline" size="sm">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </Link>
-                
-                <Button 
-                  onClick={handleDelete}
-                  variant="outline" 
-                  size="sm"
-                  className="text-red-500 hover:text-red-400"
-                >
-                  <Trash className="h-4 w-4" />
+        <div className="flex items-center space-x-2 pt-2">
+          <Link to={`/read/${book.id}`} className="flex-1">
+            <Button variant="outline" size="sm" className="w-full">
+              <BookOpen className="h-4 w-4 mr-2" />
+              Читать
+            </Button>
+          </Link>
+          
+          {showActions && isOwner && (
+            <>
+              <Link to={`/edit/${book.id}`}>
+                <Button variant="outline" size="sm" title="Редактировать">
+                  <Edit className="h-4 w-4" />
                 </Button>
-              </>
-            )}
-          </div>
-        )}
+              </Link>
+              
+              <Button 
+                onClick={handleDelete}
+                variant="outline" 
+                size="sm"
+                className="text-red-500 hover:text-red-400"
+                title="Удалить"
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </Card>
   );
