@@ -1,0 +1,152 @@
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { getUserBooks } from '@/utils/storage';
+import { Book } from '@/types';
+import BookCard from '@/components/BookCard';
+import Navigation from '@/components/Navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { genres } from '@/data/bookCovers';
+
+const Dashboard = () => {
+  const { user } = useAuth();
+  const [books, setBooks] = useState<Book[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGenre, setSelectedGenre] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+
+  const loadBooks = () => {
+    if (user) {
+      const userBooks = getUserBooks(user.id);
+      setBooks(userBooks);
+      setFilteredBooks(userBooks);
+    }
+  };
+
+  useEffect(() => {
+    loadBooks();
+  }, [user]);
+
+  useEffect(() => {
+    let filtered = books;
+
+    if (searchTerm) {
+      filtered = filtered.filter(book =>
+        book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        book.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (selectedGenre !== 'all') {
+      filtered = filtered.filter(book => book.genre === selectedGenre);
+    }
+
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter(book => book.status === selectedStatus);
+    }
+
+    setFilteredBooks(filtered);
+  }, [books, searchTerm, selectedGenre, selectedStatus]);
+
+  return (
+    <div className="min-h-screen">
+      <Navigation />
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Мои книги</h1>
+            <p className="text-gray-300">Управляйте своими произведениями</p>
+          </div>
+          
+          <Link to="/create">
+            <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 mt-4 md:mt-0">
+              <Plus className="h-4 w-4 mr-2" />
+              Создать книгу
+            </Button>
+          </Link>
+        </div>
+
+        {/* Фильтры */}
+        <div className="glass-card p-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Поиск по названию или описанию..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+              />
+            </div>
+            
+            <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Выберите жанр" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все жанры</SelectItem>
+                {genres.map(genre => (
+                  <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                <SelectValue placeholder="Статус" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все статусы</SelectItem>
+                <SelectItem value="draft">Черновик</SelectItem>
+                <SelectItem value="published">Опубликовано</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Список книг */}
+        {filteredBooks.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="glass-card p-8 max-w-md mx-auto">
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {books.length === 0 ? 'У вас пока нет книг' : 'Книги не найдены'}
+              </h3>
+              <p className="text-gray-300 mb-4">
+                {books.length === 0 
+                  ? 'Создайте свою первую книгу и начните творить!'
+                  : 'Попробуйте изменить фильтры поиска'
+                }
+              </p>
+              {books.length === 0 && (
+                <Link to="/create">
+                  <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Создать первую книгу
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredBooks.map((book) => (
+              <BookCard
+                key={book.id}
+                book={book}
+                onUpdate={loadBooks}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
