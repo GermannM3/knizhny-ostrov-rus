@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Book, User, Heart, Plus, LogOut, Menu, X } from 'lucide-react';
+import { Book, Heart, Plus, LogOut, Menu, X } from 'lucide-react';
 
 const Navigation = () => {
   const { user, logout } = useAuth();
@@ -14,7 +14,6 @@ const Navigation = () => {
     { path: '/dashboard', label: 'Мои книги', icon: Book },
     { path: '/create', label: 'Создать книгу', icon: Plus },
     { path: '/favorites', label: 'Избранное', icon: Heart },
-    { path: '/profile', label: 'Профиль', icon: User },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -45,7 +44,6 @@ const Navigation = () => {
           ))}
           
           <div className="flex items-center space-x-2 text-gray-300">
-            <User className="h-4 w-4" />
             <span>{user?.name}</span>
           </div>
           
@@ -91,7 +89,6 @@ const Navigation = () => {
           
           <div className="flex items-center justify-between pt-2 border-t border-white/20">
             <div className="flex items-center space-x-2 text-gray-300">
-              <User className="h-4 w-4" />
               <span>{user?.name}</span>
             </div>
             <Button 

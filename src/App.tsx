@@ -8,6 +8,10 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import CreateBook from "./pages/CreateBook";
+import EditBook from "./pages/EditBook";
+import EditChapter from "./pages/EditChapter";
+import ReadBook from "./pages/ReadBook";
+import FavoritesPage from "./pages/FavoritesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +47,27 @@ const App = () => (
             <Route path="/create" element={
               <ProtectedRoute>
                 <CreateBook />
+              </ProtectedRoute>
+            } />
+            <Route path="/edit/:id" element={
+              <ProtectedRoute>
+                <EditBook />
+              </ProtectedRoute>
+            } />
+            <Route path="/edit/:bookId/add-chapter" element={
+              <ProtectedRoute>
+                <EditChapter />
+              </ProtectedRoute>
+            } />
+            <Route path="/edit/:bookId/chapter/:chapterId" element={
+              <ProtectedRoute>
+                <EditChapter />
+              </ProtectedRoute>
+            } />
+            <Route path="/read/:id" element={<ReadBook />} />
+            <Route path="/favorites" element={
+              <ProtectedRoute>
+                <FavoritesPage />
               </ProtectedRoute>
             } />
             <Route path="/" element={<Navigate to="/dashboard" />} />
