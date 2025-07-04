@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -67,8 +68,6 @@ const CreateBook = () => {
       ...formData,
       coverImage: selectedCover,
       authorId: user.id,
-      views: 0,
-      isFavorite: false,
       is_public: isTelegramApp ? true : formData.status === 'published' // Автоматически публичная из Telegram
     });
 
