@@ -55,9 +55,25 @@ const ensureTestUserAndBooks = () => {
     console.log('Обновлен пароль тестового пользователя');
   }
   
+  // Исправляем authorId для всех книг автора "Герман Кенг"
+  let booksUpdated = false;
+  books.forEach((book: Book) => {
+    // Проверяем книги по имени автора или содержанию названия
+    const shouldBelongToTestUser = 
+      (book.title && book.title.includes('Герман')) ||
+      (book.title && book.title.includes('жизнь')) ||
+      (book.description && book.description.includes('Герман'));
+    
+    if (shouldBelongToTestUser && book.authorId !== testUser.id) {
+      console.log('Обновляем authorId для книги:', book.title, 'с', book.authorId, 'на', testUser.id);
+      book.authorId = testUser.id;
+      booksUpdated = true;
+    }
+  });
+  
   // Проверяем, есть ли у пользователя тестовая книга
   const userBooks = books.filter((book: Book) => book.authorId === testUser.id);
-  console.log('Найдено книг пользователя:', userBooks.length);
+  console.log('Найдено книг пользователя после обновления:', userBooks.length);
   
   if (userBooks.length === 0) {
     // Создаем тестовую книгу для пользователя
@@ -76,23 +92,15 @@ const ensureTestUserAndBooks = () => {
     };
     books.push(testBook);
     console.log('Создана тестовая книга для пользователя');
-  } else {
-    // Обновляем authorId существующих книг, если они не совпадают
-    let booksUpdated = false;
-    books.forEach((book: Book) => {
-      if (book.title && book.title.includes('Герман') && book.authorId !== testUser.id) {
-        book.authorId = testUser.id;
-        booksUpdated = true;
-        console.log('Обновлен authorId для книги:', book.title);
-      }
-    });
-    if (booksUpdated) {
-      console.log('Обновлены связи книг с пользователем');
-    }
+    booksUpdated = true;
+  }
+  
+  if (booksUpdated) {
+    localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
+    console.log('Обновлены связи книг с пользователем');
   }
   
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
   console.log('Тестовый пользователь сохранен с хешем пароля:', correctHash);
   return testUser;
 };
