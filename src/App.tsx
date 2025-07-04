@@ -32,7 +32,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { isReady, isTelegramApp } = useTelegram();
+  const tg = useTelegram();
 
   useEffect(() => {
     // Добавляем Telegram Web App скрипт если его нет
@@ -47,7 +47,7 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
 
   // Автоматическая синхронизация ТОЛЬКО при загрузке Telegram WebApp
   useEffect(() => {
-    if (isReady && isTelegramApp) {
+    if (tg.isReady && tg.isTelegramApp) {
       const initSync = async () => {
         try {
           console.log('🚀 Инициализируем автоматическую синхронизацию для Telegram WebApp');
@@ -55,12 +55,10 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
           // Ждем небольшую задержку для полной инициализации
           await new Promise(resolve => setTimeout(resolve, 2000));
           
-          // Импортируем и используем функцию синхронизации
+          // Импортируем функцию синхронизации
           const { fullSync } = await import('@/utils/telegramSync');
-          const { useTelegram } = await import('@/hooks/useTelegram');
           
-          const tgHook = useTelegram();
-          const result = await fullSync(tgHook);
+          const result = await fullSync(tg);
           
           if (result) {
             console.log('✅ Автоматическая синхронизация завершена успешно');
@@ -82,15 +80,15 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
         initSync();
       }
     }
-  }, [isReady, isTelegramApp]);
+  }, [tg.isReady, tg.isTelegramApp, tg]);
 
-  if (!isReady) {
+  if (!tg.isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="glass-card p-8 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
           <p className="text-white">Загрузка приложения...</p>
-          {isTelegramApp && <p className="text-gray-300 text-sm mt-2">Инициализация Telegram Web App</p>}
+          {tg.isTelegramApp && <p className="text-gray-300 text-sm mt-2">Инициализация Telegram Web App</p>}
         </div>
       </div>
     );
