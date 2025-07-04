@@ -57,6 +57,7 @@ export type Database = {
         Row: {
           author_id: string | null
           cover_image: string | null
+          cover_url: string | null
           created_at: string | null
           description: string | null
           format: string | null
@@ -66,6 +67,7 @@ export type Database = {
           is_public: boolean | null
           price: number | null
           source: string | null
+          stats: Json | null
           status: string | null
           title: string
           updated_at: string | null
@@ -74,6 +76,7 @@ export type Database = {
         Insert: {
           author_id?: string | null
           cover_image?: string | null
+          cover_url?: string | null
           created_at?: string | null
           description?: string | null
           format?: string | null
@@ -83,6 +86,7 @@ export type Database = {
           is_public?: boolean | null
           price?: number | null
           source?: string | null
+          stats?: Json | null
           status?: string | null
           title: string
           updated_at?: string | null
@@ -91,6 +95,7 @@ export type Database = {
         Update: {
           author_id?: string | null
           cover_image?: string | null
+          cover_url?: string | null
           created_at?: string | null
           description?: string | null
           format?: string | null
@@ -100,6 +105,7 @@ export type Database = {
           is_public?: boolean | null
           price?: number | null
           source?: string | null
+          stats?: Json | null
           status?: string | null
           title?: string
           updated_at?: string | null
@@ -650,6 +656,8 @@ export type Database = {
           current_position: number | null
           id: string
           last_read_at: string | null
+          position_text: string | null
+          progress_percentage: number | null
           total_chapters: number | null
           user_id: string | null
         }
@@ -659,6 +667,8 @@ export type Database = {
           current_position?: number | null
           id?: string
           last_read_at?: string | null
+          position_text?: string | null
+          progress_percentage?: number | null
           total_chapters?: number | null
           user_id?: string | null
         }
@@ -668,6 +678,8 @@ export type Database = {
           current_position?: number | null
           id?: string
           last_read_at?: string | null
+          position_text?: string | null
+          progress_percentage?: number | null
           total_chapters?: number | null
           user_id?: string | null
         }
@@ -944,8 +956,10 @@ export type Database = {
           avatar_url: string | null
           created_at: string | null
           email: string
+          first_name: string | null
           full_name: string | null
           id: string
+          last_name: string | null
           name: string | null
           password: string | null
           subscription_status: string | null
@@ -953,13 +967,16 @@ export type Database = {
           telegram_chat_id: string | null
           telegram_id: number | null
           updated_at: string | null
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string | null
           email: string
+          first_name?: string | null
           full_name?: string | null
           id: string
+          last_name?: string | null
           name?: string | null
           password?: string | null
           subscription_status?: string | null
@@ -967,13 +984,16 @@ export type Database = {
           telegram_chat_id?: string | null
           telegram_id?: number | null
           updated_at?: string | null
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string | null
           email?: string
+          first_name?: string | null
           full_name?: string | null
           id?: string
+          last_name?: string | null
           name?: string | null
           password?: string | null
           subscription_status?: string | null
@@ -981,6 +1001,7 @@ export type Database = {
           telegram_chat_id?: string | null
           telegram_id?: number | null
           updated_at?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -989,7 +1010,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      sync_telegram_data: {
+        Args: { p_telegram_id: number; p_data: Json }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

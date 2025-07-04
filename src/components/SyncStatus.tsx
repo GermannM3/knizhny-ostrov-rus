@@ -14,7 +14,6 @@ const SyncStatus = () => {
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [syncStatus, setSyncStatus] = useState<string>('unknown');
 
-  // Обновляем статус синхронизации
   useEffect(() => {
     const updateStatus = () => {
       const timestamp = localStorage.getItem('sync_timestamp');
@@ -40,12 +39,13 @@ const SyncStatus = () => {
       variant: result.success ? "default" : "destructive",
     });
 
-    // Обновляем статус
     setLastSyncTime(new Date());
     setSyncStatus(result.success ? 'success' : 'error');
 
-    // Перезагружаем только если были реальные изменения
-    if (result.success && result.message.includes('Синхронизировано') && !result.message.includes('Нет изменений')) {
+    // Перезагружаем ТОЛЬКО если были реальные изменения
+    if (result.success && 
+        result.message.includes('Синхронизировано') && 
+        !result.message.includes('без изменений')) {
       setTimeout(() => window.location.reload(), 1500);
     }
   };
@@ -56,8 +56,6 @@ const SyncStatus = () => {
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'error':
         return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'no_changes':
-        return <CheckCircle className="h-4 w-4 text-blue-500" />;
       default:
         return <WifiOff className="h-4 w-4 text-gray-500" />;
     }
@@ -69,8 +67,6 @@ const SyncStatus = () => {
         return 'Синхронизировано';
       case 'error':
         return 'Ошибка';
-      case 'no_changes':
-        return 'Без изменений';
       default:
         return 'Не синхронизировано';
     }
@@ -94,18 +90,16 @@ const SyncStatus = () => {
 
   return (
     <div className="space-y-4">
-      {/* Баннер для версий < 6.9 */}
       {!hasCloudStorage && (
         <Alert>
           <CloudOff className="h-4 w-4" />
           <AlertDescription>
-            Cloud Storage доступен только в Telegram 6.9+. 
-            Используйте ручную синхронизацию для обмена данными между устройствами.
+            Cloud Storage доступен начиная с Telegram 6.9+. 
+            Используйте кнопку для ручной синхронизации данных между устройствами.
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Карточка статуса */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm">
@@ -118,7 +112,7 @@ const SyncStatus = () => {
           </CardTitle>
           <CardDescription>
             {hasCloudStorage 
-              ? `Автоматическая синхронизация (Telegram ${tg?.version})`
+              ? `Облачная синхронизация (Telegram ${tg?.version})`
               : 'Только ручная синхронизация'
             }
           </CardDescription>
@@ -134,24 +128,22 @@ const SyncStatus = () => {
             </Badge>
           </div>
           
-          <div className="flex gap-2">
-            <Button
-              onClick={handleSync}
-              disabled={isLoading || !canSync}
-              size="sm"
-              variant={hasCloudStorage ? "default" : "outline"}
-              className="flex-1"
-            >
-              {isLoading ? (
-                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              ) : hasCloudStorage ? (
-                <Cloud className="h-4 w-4 mr-2" />
-              ) : (
-                <WifiOff className="h-4 w-4 mr-2" />
-              )}
-              {isLoading ? 'Синхронизация...' : hasCloudStorage ? 'Автосинхронизация' : 'Синхронизировать вручную'}
-            </Button>
-          </div>
+          <Button
+            onClick={handleSync}
+            disabled={isLoading || !canSync}
+            size="sm"
+            variant={hasCloudStorage ? "default" : "outline"}
+            className="w-full"
+          >
+            {isLoading ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : hasCloudStorage ? (
+              <Cloud className="h-4 w-4 mr-2" />
+            ) : (
+              <WifiOff className="h-4 w-4 mr-2" />
+            )}
+            {isLoading ? 'Синхронизация...' : hasCloudStorage ? 'Облачная синхронизация' : 'Ручная синхронизация'}
+          </Button>
         </CardContent>
       </Card>
     </div>

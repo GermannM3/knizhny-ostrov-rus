@@ -18,8 +18,10 @@ const SyncButton = () => {
       variant: result.success ? "default" : "destructive",
     });
 
-    // Перезагружаем только если были реальные изменения
-    if (result.success && result.message.includes('Синхронизировано') && !result.message.includes('Нет изменений')) {
+    // Перезагружаем ТОЛЬКО если были реальные изменения и НЕ "без изменений"
+    if (result.success && 
+        result.message.includes('Синхронизировано') && 
+        !result.message.includes('без изменений')) {
       setTimeout(() => window.location.reload(), 1500);
     }
   };
@@ -34,17 +36,20 @@ const SyncButton = () => {
 
   const getButtonText = () => {
     if (isLoading) return 'Синхронизация...';
-    if (hasCloudStorage) return 'Синхронизировать';
-    return 'Синхронизация вручную';
+    if (hasCloudStorage) return 'Облачная синхронизация';
+    return 'Ручная синхронизация';
   };
 
   return (
     <Button
       onClick={handleSync}
       disabled={isLoading || !canSync}
-      variant="outline"
+      variant={hasCloudStorage ? "default" : "outline"}
       size="sm"
-      className="border-white/20 text-white hover:bg-white/10"
+      className={hasCloudStorage 
+        ? "bg-primary hover:bg-primary/90" 
+        : "border-white/20 text-white hover:bg-white/10"
+      }
     >
       {getIcon()}
       {getButtonText()}
