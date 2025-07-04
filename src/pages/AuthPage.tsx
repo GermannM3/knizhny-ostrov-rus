@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { BookOpen, User, Mail, Lock, LogIn, UserPlus } from 'lucide-react';
+import { BookOpen, User, Mail, Lock, LogIn, UserPlus, Eye, EyeOff, Home } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useTelegram } from '@/hooks/useTelegram';
 
@@ -17,6 +17,7 @@ const AuthPage = () => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const { signIn, signUp, signInWithTelegram, isAuthenticated } = useSupabaseAuth();
   const { user: telegramUser, isInTelegram } = useTelegram();
@@ -95,6 +96,16 @@ const AuthPage = () => {
             <h1 className="text-3xl font-bold text-white">BookCraft</h1>
           </div>
           <p className="text-gray-300">Создавайте и читайте книги</p>
+          
+          {/* Кнопка перехода в библиотеку */}
+          <Button
+            onClick={() => navigate('/library')}
+            variant="outline"
+            className="mt-4 border-white/20 text-white hover:bg-white/10"
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Перейти к библиотеке
+          </Button>
         </div>
 
         <Card className="bg-white/10 backdrop-blur-lg border-white/20">
@@ -160,13 +171,20 @@ const AuthPage = () => {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="signin-password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="Введите пароль"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                        className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
 
@@ -227,14 +245,21 @@ const AuthPage = () => {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="signup-password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="Создайте пароль"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                        className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                         required
                         minLength={6}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-white"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
 
