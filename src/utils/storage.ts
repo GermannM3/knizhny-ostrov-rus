@@ -120,6 +120,8 @@ export const getOtherAuthorsBooks = (currentUserId: string): Book[] => {
   );
 };
 
+export const saveBook = createBook; // Alias for backward compatibility
+
 // Функции для работы с пользователями
 export const getUsers = (): User[] => {
   return getFromStorage(STORAGE_KEYS.USERS, []);
@@ -174,6 +176,35 @@ export const createOrGetUserByTelegramId = (telegramId: number, telegramUser: an
   }
   
   return user;
+};
+
+export const saveUser = createUser; // Alias for backward compatibility
+
+export const updateUser = (id: string, updates: Partial<User>): User | null => {
+  const users = getUsers();
+  const index = users.findIndex(user => user.id === id);
+  
+  if (index === -1) return null;
+  
+  users[index] = { ...users[index], ...updates };
+  saveUsers(users);
+  return users[index];
+};
+
+export const loginUser = (email: string, password: string): User | null => {
+  const users = getUsers();
+  const user = users.find(u => u.email === email && u.password === password);
+  
+  if (user) {
+    setCurrentUser(user);
+    return user;
+  }
+  
+  return null;
+};
+
+export const logoutUser = (): void => {
+  setCurrentUser(null);
 };
 
 // Функции для работы с главами
@@ -232,6 +263,8 @@ export const getChapterById = (id: string): Chapter | null => {
   return chapters.find(chapter => chapter.id === id) || null;
 };
 
+export const saveChapter = createChapter; // Alias for backward compatibility
+
 // Функции для работы с покупками
 export const getPurchases = (): Purchase[] => {
   return getFromStorage(STORAGE_KEYS.PURCHASES, []);
@@ -268,6 +301,15 @@ export const isPurchased = (userId: string, bookId: string): boolean => {
 export const getUserPurchases = (userId: string): Purchase[] => {
   const purchases = getPurchases();
   return purchases.filter(purchase => purchase.userId === userId && purchase.paid);
+};
+
+export const getPurchasedBooks = (userId: string): Book[] => {
+  const purchases = getUserPurchases(userId);
+  const books = getBooks();
+  
+  return purchases
+    .map(purchase => books.find(book => book.id === purchase.bookId))
+    .filter((book): book is Book => book !== undefined);
 };
 
 // Функции для работы с прогрессом чтения

@@ -5,7 +5,7 @@ import Navigation from '@/components/Navigation';
 import BookCard from '@/components/BookCard';
 import { Heart, BookOpen } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getUserFavorites } from '@/utils/storage';
+import { getUserFavorites, getBooks } from '@/utils/storage';
 
 const FavoritesPage = () => {
   const [favoriteBooks, setFavoriteBooks] = useState<Book[]>([]);
@@ -14,7 +14,14 @@ const FavoritesPage = () => {
   const loadFavorites = () => {
     if (user) {
       const favorites = getUserFavorites(user.id);
-      setFavoriteBooks(favorites);
+      const allBooks = getBooks();
+      
+      // Map favorite IDs to actual book objects
+      const books = favorites
+        .map(fav => allBooks.find(book => book.id === fav.bookId))
+        .filter((book): book is Book => book !== undefined);
+      
+      setFavoriteBooks(books);
     }
   };
 

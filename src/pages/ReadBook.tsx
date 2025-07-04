@@ -154,13 +154,13 @@ const ReadBook = () => {
   // Сохраняем прогресс при смене главы
   useEffect(() => {
     if (user && book && chapters.length > 0) {
-      const progress = Math.round(((currentChapter + 1) / chapters.length) * 100);
       saveReadingProgress({
         userId: user.id,
         bookId: book.id,
-        currentChapter,
+        currentChapter: currentChapter + 1,
         totalChapters: chapters.length,
-        progress
+        progress: Math.round(((currentChapter + 1) / chapters.length) * 100),
+        lastReadAt: new Date()
       });
     }
   }, [currentChapter, user, book, chapters]);
