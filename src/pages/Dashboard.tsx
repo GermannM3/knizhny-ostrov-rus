@@ -7,7 +7,7 @@ import { getUserSupabaseBooks } from '@/utils/supabaseStorage';
 import { Book } from '@/types';
 import BookCard from '@/components/BookCard';
 import Navigation from '@/components/Navigation';
-import MigrationButton from '@/components/MigrationButton';
+import DiagnosticPanel from '@/components/DiagnosticPanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -108,8 +108,6 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        {/* Кнопка миграции */}
-        <MigrationButton />
 
         {/* Фильтры */}
         <div className="glass-card p-4 mb-8">
@@ -188,6 +186,9 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+      
+      {/* Админская панель */}
+      <DiagnosticPanel />
     </div>
   );
 };
