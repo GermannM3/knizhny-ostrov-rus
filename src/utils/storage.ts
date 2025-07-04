@@ -1,4 +1,4 @@
-import { User, Book, Chapter, Purchase } from '@/types';
+import { User, Book, Chapter, Purchase, ReadingProgress, Favorite } from '@/types';
 
 const STORAGE_KEYS = {
   USERS: 'bookplatform_users',

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { getBooks, updateBook, getBookChapters, deleteChapter } from '@/utils/storage';
-import { bookCovers, genres } from '@/data/bookCovers';
+import { bookCovers, genres, genreCovers } from '@/data/bookCovers';
 import { Book, Chapter } from '@/types';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,11 @@ const EditBook = () => {
       const bookChapters = getBookChapters(id);
       setChapters(bookChapters);
     }
+  };
+
+  const getGenreCovers = () => {
+    if (!formData.genre) return bookCovers.slice(0, 10);
+    return genreCovers[formData.genre as keyof typeof genreCovers] || bookCovers.slice(0, 10);
   };
 
   const handleSave = () => {
@@ -145,7 +150,7 @@ const EditBook = () => {
             <div className="mb-6">
               <Label className="text-white mb-2 block">Обложка</Label>
               <div className="grid grid-cols-5 gap-2 mb-4">
-                {bookCovers.map((cover, index) => (
+                {getGenreCovers().map((cover, index) => (
                   <div
                     key={index}
                     className={`cursor-pointer rounded-lg overflow-hidden transition-all duration-200 ${

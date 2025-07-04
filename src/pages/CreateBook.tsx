@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { saveBook } from '@/utils/storage';
-import { bookCovers, getRandomCover, genres } from '@/data/bookCovers';
+import { bookCovers, getRandomCover, genres, genreCovers } from '@/data/bookCovers';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,20 @@ const CreateBook = () => {
     genre: '',
     status: 'draft' as 'draft' | 'published'
   });
+
+  const handleGenreChange = (genre: string) => {
+    setFormData({...formData, genre});
+    // Автоматически предлагаем обложки для выбранного жанра
+    const genreSpecificCovers = genreCovers[genre as keyof typeof genreCovers] || bookCovers.slice(0, 5);
+    if (genreSpecificCovers.length > 0) {
+      setSelectedCover(genreSpecificCovers[0]);
+    }
+  };
+
+  const getGenreCovers = () => {
+    if (!formData.genre) return bookCovers.slice(0, 5);
+    return genreCovers[formData.genre as keyof typeof genreCovers] || bookCovers.slice(0, 5);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +81,7 @@ const CreateBook = () => {
             <div className="glass-card p-6">
               <h2 className="text-xl font-semibold text-white mb-4">Выберите обложку</h2>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                {bookCovers.map((cover, index) => (
+                {getGenreCovers().map((cover, index) => (
                   <div
                     key={index}
                     className={`cursor-pointer rounded-lg overflow-hidden transition-all duration-200 ${
@@ -107,7 +121,7 @@ const CreateBook = () => {
                   
                   <div>
                     <Label htmlFor="genre" className="text-white">Жанр *</Label>
-                    <Select value={formData.genre} onValueChange={(value) => setFormData({...formData, genre: value})}>
+                    <Select value={formData.genre} onValueChange={handleGenreChange}>
                       <SelectTrigger className="bg-white/10 border-white/20 text-white">
                         <SelectValue placeholder="Выберите жанр" />
                       </SelectTrigger>
