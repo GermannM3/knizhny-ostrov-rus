@@ -1,36 +1,63 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { getUserBooks } from '@/utils/storage';
+import { getUserSupabaseBooks } from '@/utils/supabaseStorage';
 import { Book } from '@/types';
 import BookCard from '@/components/BookCard';
 import Navigation from '@/components/Navigation';
+import MigrationButton from '@/components/MigrationButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { genres } from '@/data/bookCovers';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user: localUser } = useAuth();
+  const { user: supabaseUser, isAuthenticated } = useSupabaseAuth();
+  const navigate = useNavigate();
+  
   const [books, setBooks] = useState<Book[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
 
-  const loadBooks = () => {
-    if (user) {
-      const userBooks = getUserBooks(user.id);
-      setBooks(userBooks);
-      setFilteredBooks(userBooks);
+  // Проверяем аутентификацию
+  useEffect(() => {
+    if (!isAuthenticated && !localUser) {
+      navigate('/auth');
+    }
+  }, [isAuthenticated, localUser, navigate]);
+
+  const loadBooks = async () => {
+    setLoading(true);
+    try {
+      if (supabaseUser) {
+        // Загружаем книги из Supabase
+        const supabaseBooks = await getUserSupabaseBooks(supabaseUser.id);
+        setBooks(supabaseBooks);
+        setFilteredBooks(supabaseBooks);
+      } else if (localUser) {
+        // Загружаем книги из localStorage
+        const userBooks = getUserBooks(localUser.id);
+        setBooks(userBooks);
+        setFilteredBooks(userBooks);
+      }
+    } catch (error) {
+      console.error('Error loading books:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     loadBooks();
-  }, [user]);
+  }, [supabaseUser, localUser]);
 
   useEffect(() => {
     let filtered = books;
@@ -53,6 +80,12 @@ const Dashboard = () => {
     setFilteredBooks(filtered);
   }, [books, searchTerm, selectedGenre, selectedStatus]);
 
+  const currentUser = supabaseUser || localUser;
+
+  if (!currentUser) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen">
       <Navigation />
@@ -61,7 +94,10 @@ const Dashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Мои книги</h1>
-            <p className="text-gray-300">Управляйте своими произведениями</p>
+            <p className="text-gray-300">
+              Управляйте своими произведениями{' '}
+              {supabaseUser ? '(Supabase)' : '(localStorage)'}
+            </p>
           </div>
           
           <Link to="/create">
@@ -71,6 +107,9 @@ const Dashboard = () => {
             </Button>
           </Link>
         </div>
+
+        {/* Кнопка миграции */}
+        <MigrationButton />
 
         {/* Фильтры */}
         <div className="glass-card p-4 mb-8">
@@ -111,7 +150,11 @@ const Dashboard = () => {
         </div>
 
         {/* Список книг */}
-        {filteredBooks.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="text-white">Загрузка...</div>
+          </div>
+        ) : filteredBooks.length === 0 ? (
           <div className="text-center py-12">
             <div className="glass-card p-8 max-w-md mx-auto">
               <h3 className="text-xl font-semibold text-white mb-2">

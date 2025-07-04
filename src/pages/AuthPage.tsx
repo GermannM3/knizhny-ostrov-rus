@@ -1,295 +1,268 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Book, Home, Eye, EyeOff } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { getUserByEmail } from '@/utils/storage';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { BookOpen, User, Mail, Lock, LogIn, UserPlus } from 'lucide-react';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useTelegram } from '@/hooks/useTelegram';
 
 const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: ''
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   
-  const { login, register } = useAuth();
+  const { signIn, signUp, signInWithTelegram, isAuthenticated } = useSupabaseAuth();
+  const { user: telegramUser, isInTelegram } = useTelegram();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // Если пользователь уже авторизован, перенаправляем на дашборд
+  if (isAuthenticated) {
+    navigate('/dashboard');
+    return null;
+  }
 
-    try {
-      let success = false;
-      
-      if (isLogin) {
-        console.log('Попытка входа с данными:', { email: formData.email, password: '[HIDDEN]' });
-        success = await login(formData.email, formData.password);
-        if (success) {
-          toast({
-            title: "Добро пожаловать!",
-            description: "Вы успешно вошли в систему.",
-          });
-          navigate('/dashboard');
-        } else {
-          toast({
-            title: "Ошибка входа",
-            description: "Неверный email или пароль. Проверьте данные или используйте восстановление пароля.",
-            variant: "destructive",
-          });
-        }
-      } else {
-        success = await register(formData.email, formData.password, formData.name);
-        if (success) {
-          toast({
-            title: "Регистрация успешна!",
-            description: "Добро пожаловать в BookCraft!",
-          });
-          navigate('/dashboard');
-        } else {
-          toast({
-            title: "Ошибка регистрации",
-            description: "Пользователь с таким email уже существует. Попробуйте войти или используйте другой email.",
-            variant: "destructive",
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Ошибка аутентификации:', error);
-      toast({
-        title: "Произошла ошибка",
-        description: "Попробуйте еще раз или обратитесь к администратору.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const { error } = await signIn(email, password);
+    
+    if (error) {
+      setError(error.message);
+    } else {
+      navigate('/dashboard');
     }
+    
+    setLoading(false);
   };
 
-  const handleForgotPassword = () => {
-    if (!formData.email) {
-      toast({
-        title: "Введите email",
-        description: "Сначала введите ваш email адрес.",
-        variant: "destructive",
-      });
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    if (!name.trim()) {
+      setError('Введите ваше имя');
+      setLoading(false);
       return;
     }
 
-    const user = getUserByEmail(formData.email);
+    const { error } = await signUp(email, password, name);
     
-    if (user) {
-      // В реальном приложении здесь бы отправлялось письмо с временной ссылкой
-      // Для демонстрации показываем напоминание о тестовом пользователе
-      if (formData.email === 'germannm@vk.com') {
-        toast({
-          title: "Напоминание пароля",
-          description: "Для тестового аккаунта используйте пароль: Germ@nnM3",
-        });
-      } else {
-        toast({
-          title: "Письмо отправлено",
-          description: "Проверьте почту. Мы отправили инструкции по восстановлению пароля.",
-        });
-      }
+    if (error) {
+      setError(error.message);
     } else {
-      toast({
-        title: "Пользователь не найден",
-        description: "Пользователь с таким email не зарегистрирован. Попробуйте зарегистрироваться.",
-        variant: "destructive",
-      });
+      navigate('/dashboard');
     }
+    
+    setLoading(false);
   };
 
-  if (showForgotPassword) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="flex justify-center mb-4">
-            <Link to="/library">
-              <Button variant="ghost" className="text-gray-300 hover:text-amber-400">
-                <Home className="h-4 w-4 mr-2" />
-                На главную
-              </Button>
-            </Link>
-          </div>
-          
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-4">
-              <Book className="h-12 w-12 text-amber-400" />
-            </div>
-            <h1 className="text-3xl font-bold gradient-text mb-2">BookCraft</h1>
-            <p className="text-gray-300">Восстановление пароля</p>
-          </div>
+  const handleTelegramAuth = async () => {
+    if (!telegramUser) {
+      setError('Данные Telegram не доступны');
+      return;
+    }
 
-          <Card className="glass-card border-white/20">
-            <CardHeader>
-              <CardTitle className="text-white">Забыли пароль?</CardTitle>
-              <CardDescription className="text-gray-300">
-                Введите ваш email для восстановления пароля
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="example@mail.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                  />
-                </div>
-                
-                <Button 
-                  onClick={handleForgotPassword}
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-                >
-                  Восстановить пароль
-                </Button>
-                
-                <div className="text-center">
-                  <button
-                    onClick={() => setShowForgotPassword(false)}
-                    className="text-amber-400 hover:text-amber-300 transition-colors"
-                  >
-                    Вернуться к входу
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
+    setLoading(true);
+    setError('');
+
+    const { error } = await signInWithTelegram(telegramUser);
+    
+    if (error) {
+      setError(error.message);
+    } else {
+      navigate('/dashboard');
+    }
+    
+    setLoading(false);
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-4">
-          <Link to="/library">
-            <Button variant="ghost" className="text-gray-300 hover:text-amber-400">
-              <Home className="h-4 w-4 mr-2" />
-              На главную
-            </Button>
-          </Link>
-        </div>
-        
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <Book className="h-12 w-12 text-amber-400" />
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <BookOpen className="h-8 w-8 text-amber-400" />
+            <h1 className="text-3xl font-bold text-white">BookCraft</h1>
           </div>
-          <h1 className="text-3xl font-bold gradient-text mb-2">BookCraft</h1>
-          <p className="text-gray-300">Платформа для создания и публикации книг</p>
+          <p className="text-gray-300">Создавайте и читайте книги</p>
         </div>
 
-        <Card className="glass-card border-white/20">
+        <Card className="bg-white/10 backdrop-blur-lg border-white/20">
           <CardHeader>
-            <CardTitle className="text-white">
-              {isLogin ? 'Вход' : 'Регистрация'}
+            <CardTitle className="text-white text-center">
+              Добро пожаловать
             </CardTitle>
-            <CardDescription className="text-gray-300">
-              {isLogin 
-                ? 'Войдите в свой аккаунт' 
-                : 'Создайте новый аккаунт'
-              }
-            </CardDescription>
           </CardHeader>
-          
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-white">Имя</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Ваше имя"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    required={!isLogin}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                  />
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="example@mail.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  required
-                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">Пароль</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    required
-                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Загрузка...' : (isLogin ? 'Войти' : 'Зарегистрироваться')}
-              </Button>
-            </form>
-            
-            <div className="mt-4 space-y-2 text-center">
-              {isLogin && (
-                <button
-                  onClick={() => setShowForgotPassword(true)}
-                  className="text-sm text-gray-400 hover:text-amber-300 transition-colors block w-full"
+            {/* Telegram авторизация */}
+            {isInTelegram && telegramUser && (
+              <div className="mb-6">
+                <Button
+                  onClick={handleTelegramAuth}
+                  disabled={loading}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
                 >
-                  Забыли пароль?
-                </button>
-              )}
-              
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-amber-400 hover:text-amber-300 transition-colors"
-              >
-                {isLogin 
-                  ? 'Нет аккаунта? Зарегистрируйтесь' 
-                  : 'Уже есть аккаунт? Войдите'
-                }
-              </button>
-            </div>
+                  <User className="h-4 w-4 mr-2" />
+                  Войти как {telegramUser.first_name}
+                </Button>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-white/20" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white/10 px-2 text-gray-400">или</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Tabs defaultValue="signin" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2 bg-white/10">
+                <TabsTrigger value="signin" className="text-white data-[state=active]:bg-white/20">
+                  Вход
+                </TabsTrigger>
+                <TabsTrigger value="signup" className="text-white data-[state=active]:bg-white/20">
+                  Регистрация
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="signin" className="space-y-4">
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email" className="text-white">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        placeholder="Введите email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password" className="text-white">Пароль</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        placeholder="Введите пароль"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                  >
+                    {loading ? (
+                      'Входим...'
+                    ) : (
+                      <>
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Войти
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="signup" className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name" className="text-white">Имя</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="signup-name"
+                        type="text"
+                        placeholder="Введите ваше имя"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email" className="text-white">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="Введите email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password" className="text-white">Пароль</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="Создайте пароль"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                        required
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
+                  >
+                    {loading ? (
+                      'Регистрируем...'
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Зарегистрироваться
+                      </>
+                    )}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+
+            {error && (
+              <Alert className="mt-4 bg-red-500/10 border-red-500/20">
+                <AlertDescription className="text-red-400">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       </div>

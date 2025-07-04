@@ -53,6 +53,101 @@ export type Database = {
           },
         ]
       }
+      books: {
+        Row: {
+          author_id: string | null
+          cover_image: string | null
+          created_at: string | null
+          description: string | null
+          format: string | null
+          genre: string | null
+          id: string
+          is_favorite: boolean | null
+          is_public: boolean | null
+          price: number | null
+          source: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          views: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          cover_image?: string | null
+          created_at?: string | null
+          description?: string | null
+          format?: string | null
+          genre?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          is_public?: boolean | null
+          price?: number | null
+          source?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          views?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          cover_image?: string | null
+          created_at?: string | null
+          description?: string | null
+          format?: string | null
+          genre?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          is_public?: boolean | null
+          price?: number | null
+          source?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          views?: number | null
+        }
+        Relationships: []
+      }
+      chapters: {
+        Row: {
+          book_id: string | null
+          chapter_number: number
+          content: string | null
+          created_at: string | null
+          id: string
+          is_free: boolean | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          book_id?: string | null
+          chapter_number: number
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_free?: boolean | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          book_id?: string | null
+          chapter_number?: number
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          is_free?: boolean | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_analysis: {
         Row: {
           analysis_data: Json | null
@@ -93,6 +188,35 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "user_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          added_at: string | null
+          book_id: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          added_at?: string | null
+          book_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          added_at?: string | null
+          book_id?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
             referencedColumns: ["id"]
           },
         ]
@@ -487,6 +611,83 @@ export type Database = {
         }
         Relationships: []
       }
+      purchases: {
+        Row: {
+          book_id: string | null
+          id: string
+          paid: boolean | null
+          purchase_date: string | null
+          user_id: string | null
+        }
+        Insert: {
+          book_id?: string | null
+          id?: string
+          paid?: boolean | null
+          purchase_date?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          book_id?: string | null
+          id?: string
+          paid?: boolean | null
+          purchase_date?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reading_progress: {
+        Row: {
+          book_id: string | null
+          current_chapter_id: string | null
+          current_position: number | null
+          id: string
+          last_read_at: string | null
+          total_chapters: number | null
+          user_id: string | null
+        }
+        Insert: {
+          book_id?: string | null
+          current_chapter_id?: string | null
+          current_position?: number | null
+          id?: string
+          last_read_at?: string | null
+          total_chapters?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          book_id?: string | null
+          current_chapter_id?: string | null
+          current_position?: number | null
+          id?: string
+          last_read_at?: string | null
+          total_chapters?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_progress_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reading_progress_current_chapter_id_fkey"
+            columns: ["current_chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seo_metrics: {
         Row: {
           backlinks_count: number | null
@@ -745,9 +946,12 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          name: string | null
+          password: string | null
           subscription_status: string | null
           subscription_tier: string | null
           telegram_chat_id: string | null
+          telegram_id: number | null
           updated_at: string | null
         }
         Insert: {
@@ -756,9 +960,12 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          name?: string | null
+          password?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
           telegram_chat_id?: string | null
+          telegram_id?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -767,9 +974,12 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          name?: string | null
+          password?: string | null
           subscription_status?: string | null
           subscription_tier?: string | null
           telegram_chat_id?: string | null
+          telegram_id?: number | null
           updated_at?: string | null
         }
         Relationships: []
