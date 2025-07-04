@@ -1,4 +1,3 @@
-
 import { 
   getBooks, 
   getUsers, 
@@ -60,6 +59,7 @@ export const migrateAllDataToSupabase = async () => {
 
         if (!existingUser) {
           const newUser = await createSupabaseUser({
+            id: localUser.id,
             email: localUser.email,
             password: localUser.password,
             name: localUser.name,
