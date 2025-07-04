@@ -1,10 +1,11 @@
-import { User, Book, Chapter } from '@/types';
+import { User, Book, Chapter, Purchase } from '@/types';
 
 const STORAGE_KEYS = {
   USERS: 'bookplatform_users',
   BOOKS: 'bookplatform_books',
   CHAPTERS: 'bookplatform_chapters',
-  CURRENT_USER: 'bookplatform_current_user'
+  CURRENT_USER: 'bookplatform_current_user',
+  PURCHASES: 'bookplatform_purchases'
 };
 
 // Исправленное стабильное хеширование пароля
@@ -87,6 +88,8 @@ const ensureTestUserAndBooks = () => {
       status: 'published',
       views: 5,
       isFavorite: false,
+      source: 'internal',
+      format: 'bookcraft',
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -195,6 +198,8 @@ export const saveBook = (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>): Bo
     id: Date.now().toString(),
     views: 0,
     isFavorite: false,
+    source: book.source || 'internal',
+    format: book.format || 'bookcraft',
     createdAt: new Date(),
     updatedAt: new Date()
   };
@@ -232,7 +237,7 @@ export const getUserBooks = (userId: string): Book[] => {
 };
 
 export const getPublishedBooks = (): Book[] => {
-  return getBooks().filter(book => book.status === 'published');
+  return getBooks().filter(book => book.status === 'published' && book.source !== 'external');
 };
 
 export const updateBook = (bookId: string, updates: Partial<Book>): Book | null => {
@@ -304,4 +309,119 @@ export const deleteChapter = (chapterId: string): boolean => {
     return true;
   }
   return false;
+};
+
+// Покупки
+export const savePurchase = (purchase: Omit<Purchase, 'id' | 'purchaseDate'>): Purchase => {
+  const purchases = getPurchases();
+  const newPurchase: Purchase = {
+    ...purchase,
+    id: Date.now().toString(),
+    purchaseDate: new Date()
+  };
+  purchases.push(newPurchase);
+  localStorage.setItem(STORAGE_KEYS.PURCHASES, JSON.stringify(purchases));
+  return newPurchase;
+};
+
+export const getPurchases = (): Purchase[] => {
+  const purchases = localStorage.getItem(STORAGE_KEYS.PURCHASES);
+  return purchases ? JSON.parse(purchases) : [];
+};
+
+export const purchaseBook = (userId: string, bookId: string): Purchase => {
+  // Проверяем, не куплена ли уже книга
+  const existingPurchase = getPurchases().find(p => p.userId === userId && p.bookId === bookId);
+  if (existingPurchase) {
+    throw new Error('Книга уже куплена');
+  }
+  
+  return savePurchase({
+    userId,
+    bookId,
+    paid: true
+  });
+};
+
+export const isPurchased = (userId: string, bookId: string): boolean => {
+  const purchases = getPurchases();
+  return purchases.some(p => p.userId === userId && p.bookId === bookId && p.paid);
+};
+
+export const getPurchasedBooks = (userId: string): Book[] => {
+  const purchases = getPurchases().filter(p => p.userId === userId && p.paid);
+  const books = getBooks();
+  
+  // Эмулируем внешние книги (те же, что в FindBooksPage)
+  const externalBooks: Book[] = [
+    {
+      id: 'ext-1',
+      title: 'Война и мир',
+      description: 'Классический роман Льва Толстого о войне 1812 года и судьбах русского дворянства.',
+      genre: 'Классическая литература',
+      status: 'published',
+      coverImage: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop',
+      authorId: 'tolstoy',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 15420,
+      isFavorite: false,
+      source: 'external',
+      format: 'pdf',
+      price: 299
+    },
+    {
+      id: 'ext-2',
+      title: 'Преступление и наказание',
+      description: 'Психологический роман Достоевского о моральном конфликте молодого студента.',
+      genre: 'Классическая литература',
+      status: 'published',
+      coverImage: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop',
+      authorId: 'dostoevsky',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 12350,
+      isFavorite: false,
+      source: 'external',
+      format: 'epub',
+      price: 249
+    },
+    {
+      id: 'ext-3',
+      title: 'Мастер и Маргарита',
+      description: 'Мистический роман Булгакова, переплетающий современность и библейские мотивы.',
+      genre: 'Мистика',
+      status: 'published',
+      coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+      authorId: 'bulgakov',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 18900,
+      isFavorite: false,
+      source: 'external',
+      format: 'pdf',
+      price: 399
+    },
+    {
+      id: 'ext-4',
+      title: 'Анна Каренина',
+      description: 'Роман о любви, страсти и трагических последствиях нарушения общественных норм.',
+      genre: 'Классическая литература',
+      status: 'published',
+      coverImage: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop',
+      authorId: 'tolstoy',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 9870,
+      isFavorite: false,
+      source: 'external',
+      format: 'epub',
+      price: 279
+    }
+  ];
+  
+  const allBooks = [...books, ...externalBooks];
+  const purchasedBookIds = purchases.map(p => p.bookId);
+  
+  return allBooks.filter(book => purchasedBookIds.includes(book.id));
 };

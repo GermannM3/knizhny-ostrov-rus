@@ -19,6 +19,9 @@ export interface Book {
   updatedAt: Date;
   views: number;
   isFavorite: boolean;
+  source?: 'internal' | 'external'; // Добавляем источник книги
+  format?: 'pdf' | 'epub' | 'bookcraft'; // Добавляем формат
+  price?: number; // Цена для внешних книг
 }
 
 export interface Chapter {
@@ -34,4 +37,13 @@ export interface Chapter {
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+}
+
+// Новый тип для покупок
+export interface Purchase {
+  id: string;
+  userId: string;
+  bookId: string;
+  purchaseDate: Date;
+  paid: boolean;
 }

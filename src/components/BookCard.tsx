@@ -3,19 +3,22 @@ import { Book } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Edit, Trash, Eye, BookOpen } from 'lucide-react';
+import { Heart, Edit, Trash, Eye, BookOpen, Download } from 'lucide-react';
 import { updateBook, deleteBook } from '@/utils/storage';
 import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface BookCardProps {
   book: Book;
   onUpdate?: () => void;
   showActions?: boolean;
+  showDownload?: boolean;
 }
 
-const BookCard = ({ book, onUpdate, showActions = true }: BookCardProps) => {
+const BookCard = ({ book, onUpdate, showActions = true, showDownload = false }: BookCardProps) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const isOwner = user?.id === book.authorId;
 
   const toggleFavorite = () => {
@@ -28,6 +31,19 @@ const BookCard = ({ book, onUpdate, showActions = true }: BookCardProps) => {
       deleteBook(book.id);
       onUpdate?.();
     }
+  };
+
+  const handleDownload = () => {
+    toast({
+      title: "Скачивание начато",
+      description: `Скачивание книги "${book.title}" (${book.format?.toUpperCase()}) начато`,
+    });
+    
+    // Создаем фиктивную ссылку для скачивания
+    const link = document.createElement('a');
+    link.href = '#';
+    link.download = `${book.title}.${book.format}`;
+    link.click();
   };
 
   return (
@@ -47,6 +63,12 @@ const BookCard = ({ book, onUpdate, showActions = true }: BookCardProps) => {
         >
           {book.status === 'published' ? 'Опубликовано' : 'Черновик'}
         </Badge>
+        
+        {book.format && (
+          <Badge className="absolute top-10 right-2 bg-blue-500/20 text-blue-400 border-blue-500/50">
+            {book.format.toUpperCase()}
+          </Badge>
+        )}
         
         {showActions && user && (
           <Button
@@ -88,6 +110,17 @@ const BookCard = ({ book, onUpdate, showActions = true }: BookCardProps) => {
               Читать
             </Button>
           </Link>
+          
+          {showDownload && (
+            <Button 
+              onClick={handleDownload}
+              variant="outline" 
+              size="sm"
+              title="Скачать"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          )}
           
           {showActions && isOwner && (
             <>

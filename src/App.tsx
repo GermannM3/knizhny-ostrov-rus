@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +14,8 @@ import EditChapter from "./pages/EditChapter";
 import ReadBook from "./pages/ReadBook";
 import FavoritesPage from "./pages/FavoritesPage";
 import ProfilePage from "./pages/ProfilePage";
+import FindBooksPage from "./pages/FindBooksPage";
+import PurchasedBooksPage from "./pages/PurchasedBooksPage";
 import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 
@@ -108,6 +109,12 @@ const AppRoutes = () => {
         </PublicRoute>
       } />
       <Route path="/library" element={<LibraryPage />} />
+      <Route path="/find-books" element={<FindBooksPage />} />
+      <Route path="/purchased-books" element={
+        <ProtectedRoute>
+          <PurchasedBooksPage />
+        </ProtectedRoute>
+      } />
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Dashboard />
