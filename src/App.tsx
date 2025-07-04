@@ -55,14 +55,12 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
           // Ждем небольшую задержку для полной инициализации
           await new Promise(resolve => setTimeout(resolve, 2000));
           
-          // Создаем экземпляр синхронизатора и выполняем полную синхронизацию
-          const { TelegramRPCSync } = await import('@/utils/telegramSync');
+          // Импортируем и используем функцию синхронизации
+          const { fullSync } = await import('@/utils/telegramSync');
           const { useTelegram } = await import('@/hooks/useTelegram');
           
           const tgHook = useTelegram();
-          const syncInstance = new TelegramRPCSync(tgHook);
-          
-          const result = await syncInstance.fullSync();
+          const result = await fullSync(tgHook);
           
           if (result) {
             console.log('✅ Автоматическая синхронизация завершена успешно');
