@@ -180,6 +180,7 @@ export const useTelegram = () => {
     onClose,
     onToggleButton,
     isTelegramApp: !!tg,
+    isInTelegram: !!tg,
     cloudStorageReady,
     setCloudData,
     getCloudData

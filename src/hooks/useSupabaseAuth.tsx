@@ -62,7 +62,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
   }, []);
 
   const signUp = async (email: string, password: string, name: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -74,13 +74,14 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
       }
     });
 
-    if (!error) {
-      // Создаем пользователя в таблице users
-      await supabase.from('users').insert([{
+    if (!error && data.user) {
+      // Создаем пользователя в таблице users с правильным id
+      await supabase.from('users').insert({
+        id: data.user.id,
         email,
         name,
         full_name: name
-      }]);
+      });
     }
 
     return { error };
@@ -120,7 +121,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         const email = `telegram_${telegramData.id}@bookcraft.ru`;
         const name = telegramData.first_name + (telegramData.last_name ? ` ${telegramData.last_name}` : '');
         
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password: 'telegram_auth',
           options: {
@@ -133,14 +134,15 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
           }
         });
 
-        if (!signUpError) {
-          // Создаем пользователя в таблице users
-          await supabase.from('users').insert([{
+        if (!signUpError && data.user) {
+          // Создаем пользователя в таблице users с правильным id
+          await supabase.from('users').insert({
+            id: data.user.id,
             email,
             name,
             full_name: name,
             telegram_id: telegramData.id
-          }]);
+          });
         }
 
         return { error: signUpError };

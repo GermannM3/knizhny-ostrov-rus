@@ -38,7 +38,7 @@ const Dashboard = () => {
     setLoading(true);
     try {
       if (supabaseUser) {
-        // Загружаем книги из Supabase
+        // Загружаем книги из Supabase с правильным маппингом
         const supabaseBooks = await getUserSupabaseBooks(supabaseUser.id);
         setBooks(supabaseBooks);
         setFilteredBooks(supabaseBooks);

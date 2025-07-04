@@ -3,16 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Book, Chapter, User, Purchase, ReadingProgress, Favorite } from '@/types';
 
 // Утилиты для работы с пользователями
-export const createSupabaseUser = async (userData: Omit<User, 'id' | 'createdAt'>) => {
+export const createSupabaseUser = async (userData: Omit<User, 'createdAt'>) => {
   const { data, error } = await supabase
     .from('users')
-    .insert([{
+    .insert({
+      id: userData.id,
       email: userData.email,
       name: userData.name,
       password: userData.password,
       telegram_id: userData.telegram_id,
       full_name: userData.name
-    }])
+    })
     .select()
     .single();
 
@@ -54,11 +55,32 @@ export const getSupabaseUserByTelegramId = async (telegramId: number) => {
   return data;
 };
 
+// Функция для преобразования данных Supabase в формат Book
+const mapSupabaseBookToBook = (supabaseBook: any): Book => {
+  return {
+    id: supabaseBook.id,
+    title: supabaseBook.title,
+    description: supabaseBook.description,
+    genre: supabaseBook.genre,
+    status: supabaseBook.status,
+    coverImage: supabaseBook.cover_image,
+    authorId: supabaseBook.author_id,
+    createdAt: new Date(supabaseBook.created_at),
+    updatedAt: new Date(supabaseBook.updated_at),
+    views: supabaseBook.views || 0,
+    isFavorite: supabaseBook.is_favorite || false,
+    source: supabaseBook.source || 'internal',
+    format: supabaseBook.format || 'bookcraft',
+    price: supabaseBook.price || 0,
+    is_public: supabaseBook.is_public || false
+  };
+};
+
 // Утилиты для работы с книгами
 export const createSupabaseBook = async (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>) => {
   const { data, error } = await supabase
     .from('books')
-    .insert([{
+    .insert({
       title: book.title,
       description: book.description,
       genre: book.genre,
@@ -71,7 +93,7 @@ export const createSupabaseBook = async (book: Omit<Book, 'id' | 'createdAt' | '
       source: book.source || 'internal',
       format: book.format || 'bookcraft',
       is_public: book.is_public || false
-    }])
+    })
     .select()
     .single();
 
@@ -80,10 +102,10 @@ export const createSupabaseBook = async (book: Omit<Book, 'id' | 'createdAt' | '
     return null;
   }
 
-  return data;
+  return mapSupabaseBookToBook(data);
 };
 
-export const getSupabaseBooks = async () => {
+export const getSupabaseBooks = async (): Promise<Book[]> => {
   const { data, error } = await supabase
     .from('books')
     .select('*')
@@ -94,10 +116,10 @@ export const getSupabaseBooks = async () => {
     return [];
   }
 
-  return data;
+  return data.map(mapSupabaseBookToBook);
 };
 
-export const getUserSupabaseBooks = async (userId: string) => {
+export const getUserSupabaseBooks = async (userId: string): Promise<Book[]> => {
   const { data, error } = await supabase
     .from('books')
     .select('*')
@@ -109,20 +131,20 @@ export const getUserSupabaseBooks = async (userId: string) => {
     return [];
   }
 
-  return data;
+  return data.map(mapSupabaseBookToBook);
 };
 
 // Утилиты для работы с главами
 export const createSupabaseChapter = async (chapter: Omit<Chapter, 'id' | 'createdAt' | 'updatedAt'>) => {
   const { data, error } = await supabase
     .from('chapters')
-    .insert([{
+    .insert({
       book_id: chapter.bookId,
       title: chapter.title,
       content: chapter.content,
       chapter_number: chapter.chapterNumber,
       is_free: true
-    }])
+    })
     .select()
     .single();
 
@@ -153,11 +175,11 @@ export const getBookSupabaseChapters = async (bookId: string) => {
 export const createSupabasePurchase = async (purchase: Omit<Purchase, 'id' | 'purchaseDate'>) => {
   const { data, error } = await supabase
     .from('purchases')
-    .insert([{
+    .insert({
       user_id: purchase.userId,
       book_id: purchase.bookId,
       paid: purchase.paid
-    }])
+    })
     .select()
     .single();
 
@@ -187,12 +209,12 @@ export const getUserSupabasePurchases = async (userId: string) => {
 export const saveSupabaseReadingProgress = async (progress: Omit<ReadingProgress, 'id' | 'lastReadAt'>) => {
   const { data, error } = await supabase
     .from('reading_progress')
-    .upsert([{
+    .upsert({
       user_id: progress.userId,
       book_id: progress.bookId,
       current_position: progress.currentChapter,
       total_chapters: progress.totalChapters
-    }])
+    })
     .select()
     .single();
 
@@ -208,10 +230,10 @@ export const saveSupabaseReadingProgress = async (progress: Omit<ReadingProgress
 export const addSupabaseFavorite = async (userId: string, bookId: string) => {
   const { data, error } = await supabase
     .from('favorites')
-    .insert([{
+    .insert({
       user_id: userId,
       book_id: bookId
-    }])
+    })
     .select()
     .single();
 
