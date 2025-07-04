@@ -68,19 +68,26 @@ const AuthPage = () => {
   };
 
   const handleTelegramAuth = async () => {
-    if (!telegramUser) {
-      setError('Данные Telegram не доступны');
+    const tgUser = telegramUser || window.Telegram?.WebApp?.initDataUnsafe?.user;
+    
+    if (!tgUser) {
+      setError('Данные Telegram недоступны. Попробуйте обновить страницу.');
+      console.log('❌ Telegram данные недоступны');
       return;
     }
 
     setLoading(true);
     setError('');
+    
+    console.log('🔄 Начинаем авторизацию через Telegram:', tgUser);
 
-    const { error } = await signInWithTelegram(telegramUser);
+    const { error } = await signInWithTelegram(tgUser);
     
     if (error) {
-      setError(error.message);
+      console.error('❌ Ошибка авторизации:', error);
+      setError(error.message || 'Ошибка авторизации через Telegram');
     } else {
+      console.log('✅ Авторизация успешна');
       navigate('/dashboard');
     }
     
@@ -115,8 +122,8 @@ const AuthPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Telegram авторизация */}
-            {isInTelegram && telegramUser && (
+            {/* Telegram авторизация - показываем всегда в Telegram WebApp */}
+            {(window.Telegram?.WebApp || isInTelegram) && (
               <div className="mb-6">
                 <Button
                   onClick={handleTelegramAuth}
@@ -124,7 +131,7 @@ const AuthPage = () => {
                   className="w-full bg-blue-500 hover:bg-blue-600 text-white"
                 >
                   <User className="h-4 w-4 mr-2" />
-                  Войти как {telegramUser.first_name}
+                  {telegramUser ? `Войти как ${telegramUser.first_name}` : 'Войти через Telegram'}
                 </Button>
                 <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">

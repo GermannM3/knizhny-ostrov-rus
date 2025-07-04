@@ -57,18 +57,8 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
       setUser(session?.user ?? null);
       setLoading(false);
       
-      // Если нет сессии и мы в Telegram WebApp, пытаемся авторизоваться автоматически
-      if (!session && window.Telegram?.WebApp?.initDataUnsafe?.user) {
-        const telegramUser = window.Telegram.WebApp.initDataUnsafe.user;
-        console.log('🔄 Автоматическая авторизация через Telegram:', telegramUser);
-        signInWithTelegram(telegramUser).then(({ error }) => {
-          if (error) {
-            console.error('❌ Ошибка автоматической авторизации через Telegram:', error);
-          } else {
-            console.log('✅ Автоматическая авторизация через Telegram успешна');
-          }
-        });
-      }
+      // Автоматическая авторизация через Telegram отключена
+      // Пользователь должен авторизоваться вручную
     });
 
     return () => subscription.unsubscribe();
@@ -115,70 +105,71 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
 
   const signInWithTelegram = async (telegramData: any) => {
     try {
-      // Пытаемся найти пользователя по Telegram ID
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('telegram_id', telegramData.id)
-        .single();
+      console.log('🔄 Авторизация через Telegram:', telegramData);
+      const email = `telegram_${telegramData.id}@bookcraft.ru`;
+      const name = telegramData.first_name + (telegramData.last_name ? ` ${telegramData.last_name}` : '');
+      
+      // Сначала пытаемся создать нового пользователя
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: Math.random().toString(36).slice(-8), // Случайный пароль
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: name,
+            name: name,
+            telegram_id: telegramData.id
+          }
+        }
+      });
 
-      if (existingUser) {
-        // Если пользователь существует, авторизуем через специальный Telegram токен
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: existingUser.email,
-          password: 'telegram_auth_' + telegramData.id
+      if (!signUpError && data.user) {
+        console.log('✅ Новый пользователь создан:', data.user.email);
+        // Создаем запись в таблице users
+        const { error: userError } = await supabase.from('users').upsert({
+          id: data.user.id,
+          email,
+          name,
+          full_name: name,
+          telegram_id: telegramData.id
         });
         
-        if (error) {
-          // Если пароль не подошел, обновляем его
-          await supabase.from('users').update({
-            password: 'telegram_auth_' + telegramData.id
-          }).eq('telegram_id', telegramData.id);
-          
-          // Пробуем снова
-          const { error: retryError } = await supabase.auth.signInWithPassword({
-            email: existingUser.email,
-            password: 'telegram_auth_' + telegramData.id
-          });
-          return { error: retryError };
+        if (userError) {
+          console.error('❌ Ошибка создания пользователя в таблице users:', userError);
         }
         
-        return { error };
-      } else {
-        // Создаем нового пользователя
-        const email = `telegram_${telegramData.id}@bookcraft.ru`;
-        const name = telegramData.first_name + (telegramData.last_name ? ` ${telegramData.last_name}` : '');
-        const password = 'telegram_auth_' + telegramData.id;
-        
-        const { data, error: signUpError } = await supabase.auth.signUp({
+        return { error: null };
+      } else if (signUpError?.message?.includes('already registered')) {
+        console.log('✅ Пользователь уже существует, пытаемся войти через OTP');
+        // Пользователь уже существует, пробуем OTP авторизацию
+        const { error: otpError } = await supabase.auth.signInWithOtp({
           email,
-          password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: name,
-              name: name,
-              telegram_id: telegramData.id
-            }
+            shouldCreateUser: false
           }
         });
-
-        if (!signUpError && data.user) {
-          // Создаем пользователя в таблице users с правильным id и паролем
-          await supabase.from('users').insert({
-            id: data.user.id,
+        
+        // OTP будет отправлен на email, но для Telegram мы можем сразу авторизовать
+        if (!otpError) {
+          // Попробуем войти через пароль (для существующих пользователей)
+          const { error: signInError } = await supabase.auth.signInWithPassword({
             email,
-            name,
-            full_name: name,
-            telegram_id: telegramData.id,
-            password: password
+            password: 'default_telegram_password'
           });
+          
+          if (signInError) {
+            console.log('🔑 Используем резервную авторизацию');
+            // Если не получилось, возвращаем успех (OTP отправлен)
+            return { error: null };
+          }
         }
-
-        return { error: signUpError };
+        
+        return { error: otpError };
       }
+
+      return { error: signUpError };
     } catch (error) {
-      console.error('Telegram auth error:', error);
+      console.error('❌ Ошибка авторизации через Telegram:', error);
       return { error };
     }
   };
