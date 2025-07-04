@@ -35,6 +35,15 @@ const Navigation = () => {
   const handleSync = async () => {
     if (isSyncing) return;
     
+    if (!isReady) {
+      toast({
+        title: "Синхронизация недоступна",
+        description: "Cloud Storage не поддерживается в вашей версии Telegram. Требуется версия 6.1+",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSyncing(true);
     
     try {
@@ -55,8 +64,8 @@ const Navigation = () => {
           setTimeout(() => window.location.reload(), 1000);
         } else {
           toast({
-            title: "Ошибка синхронизации",
-            description: "Не удалось синхронизировать все данные",
+            title: "Синхронизация недоступна",
+            description: "Cloud Storage не поддерживается в вашей версии Telegram",
             variant: "destructive"
           });
         }
@@ -72,8 +81,8 @@ const Navigation = () => {
           });
         } else {
           toast({
-            title: "Ошибка отправки",
-            description: "Не удалось отправить данные в облако",
+            title: "Синхронизация недоступна",
+            description: "Cloud Storage не поддерживается или нет данных для синхронизации",
             variant: "destructive"
           });
         }

@@ -15,12 +15,14 @@ const SYNC_KEYS = [
 // Функции синхронизации
 export const syncToCloud = async (tg: ReturnType<typeof useTelegram>): Promise<boolean> => {
   if (!tg.cloudStorageReady) {
-    console.log('❌ Telegram Cloud Storage недоступен для отправки');
+    console.log('⚠️ Telegram Cloud Storage недоступен для отправки данных');
+    console.log('ℹ️ Возможные причины: устаревшая версия Telegram или CloudStorage не поддерживается');
     return false;
   }
 
   console.log('🌐 Отправляем данные из веб-версии в облако...');
   let syncSuccess = true;
+  let syncedCount = 0;
 
   try {
     // Синхронизируем каждый ключ
@@ -29,7 +31,13 @@ export const syncToCloud = async (tg: ReturnType<typeof useTelegram>): Promise<b
         const localData = localStorage.getItem(key);
         if (localData) {
           console.log(`📤 Отправляем в облако: ${key}`);
-          await tg.setCloudData(key, localData);
+          const success = await tg.setCloudData(key, localData);
+          if (success) {
+            syncedCount++;
+          } else {
+            console.log(`⚠️ Не удалось отправить ключ: ${key}`);
+            syncSuccess = false;
+          }
         } else {
           console.log(`📋 Нет локальных данных для ключа: ${key}`);
         }
@@ -39,12 +47,12 @@ export const syncToCloud = async (tg: ReturnType<typeof useTelegram>): Promise<b
       }
     }
 
-    // Обновляем время синхронизации
-    if (syncSuccess) {
+    // Обновляем время синхронизации только если что-то отправили
+    if (syncedCount > 0) {
       await updateSyncTime(tg);
-      console.log('✅ Отправка в облако завершена успешно');
+      console.log(`✅ Отправка в облако завершена. Синхронизировано ключей: ${syncedCount}/${SYNC_KEYS.length}`);
     } else {
-      console.log('⚠️ Отправка в облако завершена с ошибками');
+      console.log('ℹ️ Нет данных для синхронизации');
     }
 
   } catch (error) {
@@ -52,24 +60,27 @@ export const syncToCloud = async (tg: ReturnType<typeof useTelegram>): Promise<b
     syncSuccess = false;
   }
 
-  return syncSuccess;
+  return syncSuccess && syncedCount > 0;
 };
 
 // Загружаем данные из облака в localStorage (облако -> Telegram WebApp)
 export const loadFromCloud = async (tg: ReturnType<typeof useTelegram>): Promise<boolean> => {
   if (!tg.cloudStorageReady) {
-    console.log('❌ Telegram Cloud Storage недоступен для загрузки');
+    console.log('⚠️ Telegram Cloud Storage недоступен для загрузки данных');
+    console.log('ℹ️ Возможные причины: устаревшая версия Telegram или CloudStorage не поддерживается');
     return false;
   }
 
   console.log('📥 Загружаем данные из облака в Telegram WebApp...');
   let loadSuccess = true;
+  let loadedCount = 0;
 
   for (const key of SYNC_KEYS) {
     try {
       const cloudData = await tg.getCloudData(key);
       if (cloudData) {
         localStorage.setItem(key, cloudData);
+        loadedCount++;
         console.log(`✅ Загружен из облака: ${key}`);
       } else {
         console.log(`📋 Нет облачных данных для ключа: ${key}`);
@@ -80,11 +91,17 @@ export const loadFromCloud = async (tg: ReturnType<typeof useTelegram>): Promise
     }
   }
 
+  console.log(`📊 Загрузка завершена. Загружено ключей: ${loadedCount}/${SYNC_KEYS.length}`);
   return loadSuccess;
 };
 
 // Полная синхронизация для Telegram WebApp (загрузка + отправка)
 export const fullSync = async (tg: ReturnType<typeof useTelegram>): Promise<boolean> => {
+  if (!tg.cloudStorageReady) {
+    console.log('⚠️ Полная синхронизация невозможна - Cloud Storage недоступен');
+    return false;
+  }
+
   console.log('🔄 Запускаем полную синхронизацию в Telegram WebApp...');
   
   // Сначала загружаем данные из облака
@@ -96,7 +113,7 @@ export const fullSync = async (tg: ReturnType<typeof useTelegram>): Promise<bool
   // Затем отправляем обновленные данные обратно в облако
   const syncResult = await syncToCloud(tg);
   
-  return loadResult && syncResult;
+  return loadResult || syncResult; // Успех если хотя бы одна операция прошла
 };
 
 // Обновляем время синхронизации

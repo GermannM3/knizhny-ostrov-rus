@@ -5,7 +5,7 @@ interface TelegramWebApp {
   ready: () => void;
   close: () => void;
   expand: () => void;
-  CloudStorage: {
+  CloudStorage?: {
     setItem: (key: string, value: string, callback?: (error: string | null, result?: boolean) => void) => void;
     getItem: (key: string, callback: (error: string | null, result?: string) => void) => void;
     getItems: (keys: string[], callback: (error: string | null, result?: Record<string, string>) => void) => void;
@@ -44,6 +44,7 @@ interface TelegramWebApp {
     button_color: string;
     button_text_color: string;
   };
+  version: string;
 }
 
 declare global {
@@ -69,16 +70,22 @@ export const useTelegram = () => {
       setUser(app.initDataUnsafe?.user);
       setIsReady(true);
       
-      // Проверяем доступность CloudStorage
-      if (app.CloudStorage) {
+      // Проверяем доступность CloudStorage с учетом версии
+      const isCloudStorageSupported = app.CloudStorage && 
+        typeof app.CloudStorage.setItem === 'function' &&
+        typeof app.CloudStorage.getItem === 'function';
+      
+      if (isCloudStorageSupported) {
         setCloudStorageReady(true);
-        console.log('Telegram Cloud Storage доступен');
+        console.log('✅ Telegram Cloud Storage доступен');
       } else {
-        console.log('Telegram Cloud Storage недоступен');
+        console.log('❌ Telegram Cloud Storage недоступен в версии:', app.version || 'неизвестно');
+        console.log('ℹ️ CloudStorage требует Telegram Web App версии 6.1+');
       }
       
       console.log('Telegram Web App инициализирован:', app);
       console.log('Telegram пользователь:', app.initDataUnsafe?.user);
+      console.log('Версия Telegram Web App:', app.version);
     } else {
       console.log('Telegram Web App не найден, работаем как обычное веб-приложение');
       setIsReady(true);
@@ -99,44 +106,56 @@ export const useTelegram = () => {
 
   // Упрощенные методы для работы с облачным хранилищем
   const setCloudData = async (key: string, value: string): Promise<boolean> => {
-    return new Promise((resolve, reject) => {
-      if (!tg?.CloudStorage) {
-        console.log('Cloud Storage недоступен для записи');
+    return new Promise((resolve) => {
+      if (!tg?.CloudStorage || !cloudStorageReady) {
+        console.log('❌ Cloud Storage недоступен для записи');
         resolve(false);
         return;
       }
       
-      console.log(`Сохраняем в облако ключ: ${key}`);
-      tg.CloudStorage.setItem(key, value, (error, result) => {
-        if (error) {
-          console.error(`Ошибка сохранения ${key}:`, error);
-          reject(new Error(error));
-        } else {
-          console.log(`Успешно сохранен ключ: ${key}`);
-          resolve(result || true);
-        }
-      });
+      console.log(`📤 Сохраняем в облако ключ: ${key}`);
+      
+      try {
+        tg.CloudStorage.setItem(key, value, (error, result) => {
+          if (error) {
+            console.error(`❌ Ошибка сохранения ${key}:`, error);
+            resolve(false);
+          } else {
+            console.log(`✅ Успешно сохранен ключ: ${key}`);
+            resolve(result || true);
+          }
+        });
+      } catch (error) {
+        console.error(`❌ Исключение при сохранении ${key}:`, error);
+        resolve(false);
+      }
     });
   };
 
   const getCloudData = async (key: string): Promise<string | null> => {
-    return new Promise((resolve, reject) => {
-      if (!tg?.CloudStorage) {
-        console.log('Cloud Storage недоступен для чтения');
+    return new Promise((resolve) => {
+      if (!tg?.CloudStorage || !cloudStorageReady) {
+        console.log('❌ Cloud Storage недоступен для чтения');
         resolve(null);
         return;
       }
       
-      console.log(`Загружаем из облака ключ: ${key}`);
-      tg.CloudStorage.getItem(key, (error, result) => {
-        if (error) {
-          console.error(`Ошибка загрузки ${key}:`, error);
-          reject(new Error(error));
-        } else {
-          console.log(`Загружен ключ ${key}:`, result ? 'данные найдены' : 'данных нет');
-          resolve(result || null);
-        }
-      });
+      console.log(`📥 Загружаем из облака ключ: ${key}`);
+      
+      try {
+        tg.CloudStorage.getItem(key, (error, result) => {
+          if (error) {
+            console.error(`❌ Ошибка загрузки ${key}:`, error);
+            resolve(null);
+          } else {
+            console.log(`✅ Загружен ключ ${key}:`, result ? 'данные найдены' : 'данных нет');
+            resolve(result || null);
+          }
+        });
+      } catch (error) {
+        console.error(`❌ Исключение при загрузке ${key}:`, error);
+        resolve(null);
+      }
     });
   };
 
