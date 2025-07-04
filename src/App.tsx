@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -45,6 +44,25 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
       script.async = true;
       document.head.appendChild(script);
       console.log('Telegram Web App скрипт добавлен');
+    }
+  }, []);
+
+  // Автоматическая инициализация данных при первом запуске
+  useEffect(() => {
+    const hasInitialized = localStorage.getItem('bookcraft_initialized');
+    if (!hasInitialized) {
+      console.log('🚀 Первый запуск - инициализация данных...');
+      
+      // Импортируем и запускаем инициализацию
+      import('@/utils/initData').then(({ initializeTestData }) => {
+        try {
+          initializeTestData();
+          localStorage.setItem('bookcraft_initialized', 'true');
+          console.log('✅ Данные инициализированы успешно');
+        } catch (error) {
+          console.error('❌ Ошибка инициализации:', error);
+        }
+      });
     }
   }, []);
 
