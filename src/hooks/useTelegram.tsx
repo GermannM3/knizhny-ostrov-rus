@@ -70,22 +70,25 @@ export const useTelegram = () => {
       setUser(app.initDataUnsafe?.user);
       setIsReady(true);
       
-      // Проверяем доступность CloudStorage с учетом версии
-      const isCloudStorageSupported = app.CloudStorage && 
+      // Проверяем версию для CloudStorage
+      const version = parseFloat(app.version || '0');
+      const hasCloudStorage = app.CloudStorage && 
         typeof app.CloudStorage.setItem === 'function' &&
         typeof app.CloudStorage.getItem === 'function';
       
-      if (isCloudStorageSupported) {
+      if (hasCloudStorage && version >= 6.1) {
         setCloudStorageReady(true);
-        console.log('✅ Telegram Cloud Storage доступен');
+        console.log('✅ Telegram Cloud Storage доступен (версия ' + app.version + ')');
       } else {
-        console.log('❌ Telegram Cloud Storage недоступен в версии:', app.version || 'неизвестно');
-        console.log('ℹ️ CloudStorage требует Telegram Web App версии 6.1+');
+        setCloudStorageReady(false);
+        console.log('❌ Telegram Cloud Storage недоступен');
+        console.log('📱 Версия Telegram Web App:', app.version || 'неизвестно');
+        console.log('⚠️ Требуется версия 6.1+ для Cloud Storage');
+        console.log('💡 Обновите Telegram или используйте веб-версию');
       }
       
       console.log('Telegram Web App инициализирован:', app);
       console.log('Telegram пользователь:', app.initDataUnsafe?.user);
-      console.log('Версия Telegram Web App:', app.version);
     } else {
       console.log('Telegram Web App не найден, работаем как обычное веб-приложение');
       setIsReady(true);
@@ -104,7 +107,7 @@ export const useTelegram = () => {
     }
   };
 
-  // Упрощенные методы для работы с облачным хранилищем
+  // Методы для работы с облачным хранилищем - только если действительно доступно
   const setCloudData = async (key: string, value: string): Promise<boolean> => {
     return new Promise((resolve) => {
       if (!tg?.CloudStorage || !cloudStorageReady) {

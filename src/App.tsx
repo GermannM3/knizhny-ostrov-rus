@@ -45,27 +45,28 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // Автоматическая синхронизация ТОЛЬКО при загрузке Telegram WebApp
+  // Автоматическая синхронизация при загрузке Telegram WebApp
   useEffect(() => {
     if (tg.isReady && tg.isTelegramApp) {
       const initSync = async () => {
         try {
-          console.log('🚀 Инициализируем автоматическую синхронизацию для Telegram WebApp');
+          console.log('🚀 Инициализация автоматической синхронизации...');
           
-          // Ждем небольшую задержку для полной инициализации
+          // Ждем полной инициализации
           await new Promise(resolve => setTimeout(resolve, 2000));
           
-          // Импортируем функцию синхронизации
           const { fullSync } = await import('@/utils/telegramSync');
-          
           const result = await fullSync(tg);
           
-          if (result) {
-            console.log('✅ Автоматическая синхронизация завершена успешно');
-            // Принудительно обновляем страницу для отображения синхронизированных данных
+          if (!result.hasCloudStorage) {
+            console.log('⚠️ ВНИМАНИЕ: Cloud Storage недоступен');
+            console.log('📱 Обновите Telegram или используйте веб-версию для синхронизации');
+          } else if (result.success) {
+            console.log('✅ Автоматическая синхронизация выполнена');
+            // Перезагружаем страницу только если были изменения
             setTimeout(() => window.location.reload(), 1000);
           } else {
-            console.log('⚠️ Автоматическая синхронизация завершена с предупреждениями');
+            console.log('ℹ️ Синхронизация завершена без изменений');
           }
           
         } catch (error) {
@@ -73,14 +74,14 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
         }
       };
       
-      // Запускаем синхронизацию только один раз
+      // Выполняем только один раз за сессию
       const hasAutoSynced = sessionStorage.getItem('telegram_auto_synced');
       if (!hasAutoSynced) {
         sessionStorage.setItem('telegram_auto_synced', 'true');
         initSync();
       }
     }
-  }, [tg.isReady, tg.isTelegramApp, tg]);
+  }, [tg.isReady, tg.isTelegramApp, tg.cloudStorageReady]);
 
   if (!tg.isReady) {
     return (
@@ -88,7 +89,11 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
         <div className="glass-card p-8 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
           <p className="text-white">Загрузка приложения...</p>
-          {tg.isTelegramApp && <p className="text-gray-300 text-sm mt-2">Инициализация Telegram Web App</p>}
+          {tg.isTelegramApp && (
+            <p className="text-gray-300 text-sm mt-2">
+              Инициализация Telegram Web App
+            </p>
+          )}
         </div>
       </div>
     );
