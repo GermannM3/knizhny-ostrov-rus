@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useDebouncedEffect } from '@/hooks/useDebouncedEffect';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,23 +17,36 @@ const SyncStatus = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const [syncStatus, setSyncStatus] = useState<string>('unknown');
+  const didAutoSyncOnce = useRef(false);
 
-  // Обновляем статус синхронизации
-  useEffect(() => {
-    const updateStatus = () => {
-      const timestamp = localStorage.getItem('sync_timestamp');
-      const status = localStorage.getItem('sync_status') || 'unknown';
-      
-      setLastSyncTime(timestamp ? new Date(parseInt(timestamp)) : null);
-      setSyncStatus(status);
-    };
-
-    updateStatus();
+  // Обновляем статус синхронизации с debounce
+  const updateStatus = () => {
+    const timestamp = localStorage.getItem('sync_timestamp');
+    const status = localStorage.getItem('sync_status') || 'unknown';
     
+    setLastSyncTime(timestamp ? new Date(parseInt(timestamp)) : null);
+    setSyncStatus(status);
+  };
+
+  useDebouncedEffect(() => {
+    updateStatus();
+  }, [], 300);
+
+  useEffect(() => {
     // Обновляем каждые 30 секунд
     const interval = setInterval(updateStatus, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Автосинхронизация только один раз за сессию
+  useEffect(() => {
+    const didSync = localStorage.getItem('sync_completed');
+    if (!didAutoSyncOnce.current && tg.cloudStorageReady && !didSync) {
+      handleAutoSync();
+      didAutoSyncOnce.current = true;
+      localStorage.setItem('sync_completed', 'true');
+    }
+  }, [tg.cloudStorageReady]);
 
   // Не показываем компонент если не в Telegram
   if (!tg.isTelegramApp) {
@@ -55,10 +69,12 @@ const SyncStatus = () => {
         setLastSyncTime(new Date());
         setSyncStatus('success');
         
-        // Перезагружаем страницу если были изменения
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Перезагружаем страницу только если были изменения
+        if (result.message !== 'Синхронизация завершена без изменений') {
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        }
       } else {
         toast({
           title: "Ошибка синхронизации",
@@ -99,9 +115,12 @@ const SyncStatus = () => {
         setLastSyncTime(new Date());
         setSyncStatus('success');
         
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Перезагружаем только если были изменения
+        if (result.message !== 'Синхронизация завершена без изменений') {
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        }
       } else {
         toast({
           title: "Синхронизация завершена",

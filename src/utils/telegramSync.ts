@@ -135,6 +135,9 @@ export const fullSync = async (tg: ReturnType<typeof useTelegram>): Promise<{ su
     // Сохраняем время и статус синхронизации
     localStorage.setItem('sync_timestamp', Date.now().toString());
     localStorage.setItem('sync_status', success ? 'success' : 'no_changes');
+    if (success) {
+      localStorage.setItem('sync_completed', 'true');
+    }
     
     console.log('🏁 ПОЛНАЯ СИНХРОНИЗАЦИЯ ЗАВЕРШЕНА:', message);
     return { success, hasCloudStorage: true, message };
@@ -164,7 +167,7 @@ const loadFromCloudAdvanced = async (tg: ReturnType<typeof useTelegram>): Promis
           return;
         }
         
-        if (!result) {
+        if (!result || Object.keys(result).length === 0) {
           console.log('📋 В облаке нет данных');
           resolve(false);
           return;

@@ -35,10 +35,12 @@ const SyncButton = () => {
           description: result.message,
         });
         
-        // Перезагружаем страницу если были изменения
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Перезагружаем страницу только если были изменения
+        if (result.message !== 'Синхронизация завершена без изменений') {
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        }
       } else {
         toast({
           title: "Синхронизация завершена",
