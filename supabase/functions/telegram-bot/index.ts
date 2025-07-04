@@ -30,7 +30,7 @@ serve(async (req) => {
       const user = message.from
 
       // Регистрируем/обновляем пользователя
-      await supabase.rpc('sync_telegram_data', {
+      const { data: syncResult, error: syncError } = await supabase.rpc('sync_telegram_data', {
         p_telegram_id: user.id,
         p_data: {
           first_name: user.first_name,
@@ -38,6 +38,12 @@ serve(async (req) => {
           username: user.username
         }
       })
+      
+      if (syncError) {
+        console.error('❌ Ошибка синхронизации пользователя:', syncError)
+      } else {
+        console.log('✅ Пользователь синхронизирован:', syncResult)
+      }
 
       let responseText = ''
       let replyMarkup = null
