@@ -1,97 +1,47 @@
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Cloud, CloudOff, RefreshCw, WifiOff } from 'lucide-react';
-import { useTelegramSync } from '@/utils/telegramSync';
-import { useManualSync } from '@/utils/manualSync';
+import { Cloud, RefreshCw, WifiOff } from 'lucide-react';
+import { useSync } from '@/hooks/useSync';
 import { useTelegram } from '@/hooks/useTelegram';
 import { toast } from '@/hooks/use-toast';
 
 const SyncButton = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const tg = useTelegram();
-  const telegramSync = useTelegramSync();
-  const manualSync = useManualSync();
+  const { sync, isLoading, canSync, hasCloudStorage } = useSync();
+  const { isTelegramApp } = useTelegram();
 
   const handleSync = async () => {
-    setIsLoading(true);
+    const result = await sync();
     
-    try {
-      let result;
-      
-      if (tg.cloudStorageReady) {
-        // Автоматическая синхронизация для версий 6.9+
-        console.log('🔄 Запуск автоматической синхронизации...');
-        result = await telegramSync.sync();
-      } else {
-        // Ручная синхронизация для старых версий
-        console.log('🔄 Запуск ручной синхронизации...');
-        result = await manualSync.fullSync();
-      }
-      
-      if (result.success) {
-        toast({
-          title: "Синхронизация завершена",
-          description: result.message,
-        });
-        
-        // Перезагружаем страницу только если были изменения
-        if (result.message !== 'Синхронизация завершена без изменений') {
-          setTimeout(() => {
-            window.location.reload();
-          }, 1500);
-        }
-      } else {
-        toast({
-          title: "Синхронизация завершена",
-          description: result.message,
-          variant: (result as any).hasCloudStorage !== false ? "default" : "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('❌ Ошибка синхронизации:', error);
-      toast({
-        title: "Ошибка синхронизации",
-        description: "Попробуйте еще раз через несколько секунд",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    toast({
+      title: result.success ? "Синхронизация завершена" : "Ошибка синхронизации",
+      description: result.message,
+      variant: result.success ? "default" : "destructive",
+    });
+
+    // Перезагружаем только если были реальные изменения
+    if (result.success && result.message.includes('Синхронизировано') && !result.message.includes('Нет изменений')) {
+      setTimeout(() => window.location.reload(), 1500);
     }
   };
 
-  if (!tg.isTelegramApp) {
-    return null; // Показываем только в Telegram WebApp
-  }
+  if (!isTelegramApp) return null;
 
   const getIcon = () => {
-    if (isLoading) {
-      return <RefreshCw className="h-4 w-4 mr-2 animate-spin" />;
-    }
-    
-    if (tg.cloudStorageReady) {
-      return <Cloud className="h-4 w-4 mr-2" />;
-    }
-    
+    if (isLoading) return <RefreshCw className="h-4 w-4 mr-2 animate-spin" />;
+    if (hasCloudStorage) return <Cloud className="h-4 w-4 mr-2" />;
     return <WifiOff className="h-4 w-4 mr-2" />;
   };
 
   const getButtonText = () => {
-    if (isLoading) {
-      return 'Синхронизация...';
-    }
-    
-    if (tg.cloudStorageReady) {
-      return 'Синхронизировать';
-    }
-    
+    if (isLoading) return 'Синхронизация...';
+    if (hasCloudStorage) return 'Синхронизировать';
     return 'Синхронизация вручную';
   };
 
   return (
     <Button
       onClick={handleSync}
-      disabled={isLoading || (!tg.cloudStorageReady && !manualSync.isReady)}
+      disabled={isLoading || !canSync}
       variant="outline"
       size="sm"
       className="border-white/20 text-white hover:bg-white/10"

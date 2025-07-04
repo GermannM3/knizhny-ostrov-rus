@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useTelegramSync } from '@/utils/telegramSync';
+import { useSync } from '@/hooks/useSync';
 import { Button } from '@/components/ui/button';
 import { 
   BookOpen, 
@@ -22,10 +22,9 @@ const Navigation = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
   
-  const { syncToCloud, sync, isReady, isTelegramApp } = useTelegramSync();
+  const { sync, isLoading, canSync, hasCloudStorage } = useSync();
 
   const handleLogout = () => {
     logout();
@@ -33,69 +32,28 @@ const Navigation = () => {
   };
 
   const handleSync = async () => {
-    if (isSyncing) return;
+    if (isLoading) return;
     
-    if (!isReady) {
+    if (!canSync) {
       toast({
         title: "Синхронизация недоступна",
-        description: "Cloud Storage не поддерживается в вашей версии Telegram. Требуется версия 6.1+",
+        description: "Telegram ID не найден",
         variant: "destructive"
       });
       return;
     }
     
-    setIsSyncing(true);
+    const result = await sync();
     
-    try {
-      let result;
-      
-      if (isTelegramApp) {
-        // В Telegram WebApp выполняем полную синхронизацию
-        console.log('🔄 Выполняем полную синхронизацию в Telegram WebApp');
-        result = await sync();
-        
-        if (result) {
-          toast({
-            title: "Синхронизация завершена",
-            description: "Данные успешно синхронизированы с облаком Telegram",
-          });
-          
-          // Перезагружаем страницу для отображения обновленных данных
-          setTimeout(() => window.location.reload(), 1000);
-        } else {
-          toast({
-            title: "Синхронизация недоступна",
-            description: "Cloud Storage не поддерживается в вашей версии Telegram",
-            variant: "destructive"
-          });
-        }
-      } else {
-        // В веб-версии отправляем данные в облако
-        console.log('📤 Отправляем данные из веб-версии в облако');
-        result = await syncToCloud();
-        
-        if (result) {
-          toast({
-            title: "Данные отправлены",
-            description: "Ваши данные сохранены в облаке Telegram",
-          });
-        } else {
-          toast({
-            title: "Синхронизация недоступна",
-            description: "Cloud Storage не поддерживается или нет данных для синхронизации",
-            variant: "destructive"
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Ошибка синхронизации:', error);
-      toast({
-        title: "Ошибка синхронизации",
-        description: `Произошла ошибка: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
-        variant: "destructive"
-      });
-    } finally {
-      setIsSyncing(false);
+    toast({
+      title: result.success ? "Синхронизация завершена" : "Ошибка синхронизации",
+      description: result.message,
+      variant: result.success ? "default" : "destructive",
+    });
+
+    // Перезагружаем только если были реальные изменения
+    if (result.success && result.message.includes('Синхронизировано') && !result.message.includes('Нет изменений')) {
+      setTimeout(() => window.location.reload(), 1500);
     }
   };
 
@@ -179,16 +137,16 @@ const Navigation = () => {
           {/* Кнопки действий */}
           <div className="hidden md:flex items-center space-x-4">
             {/* Кнопка синхронизации */}
-            {isReady && (
+            {canSync && (
               <Button
                 onClick={handleSync}
-                disabled={isSyncing}
+                disabled={isLoading}
                 variant="outline"
                 size="sm"
                 className="border-white/20 text-white hover:bg-white/10"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                {isSyncing ? 'Синхронизация...' : 'Синхронизация'}
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                {isLoading ? 'Синхронизация...' : 'Синхронизация'}
               </Button>
             )}
 
@@ -259,19 +217,19 @@ const Navigation = () => {
               
               <div className="pt-4 mt-4 border-t border-white/20">
                 {/* Кнопка синхронизации */}
-                {isReady && (
+                {canSync && (
                   <Button
                     onClick={() => {
                       handleSync();
                       setIsMenuOpen(false);
                     }}
-                    disabled={isSyncing}
+                    disabled={isLoading}
                     variant="outline"
                     size="sm"
                     className="border-white/20 text-white hover:bg-white/10 w-full mb-2"
                   >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                    {isSyncing ? 'Синхронизация...' : 'Синхронизация'}
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                    {isLoading ? 'Синхронизация...' : 'Синхронизация'}
                   </Button>
                 )}
 
