@@ -16,11 +16,9 @@ const hashPassword = (password: string): string => {
   for (let i = 0; i < combined.length; i++) {
     const char = combined.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    // Приводим к 32-битному целому числу
-    hash |= 0;
+    hash = hash & hash; // Приводим к 32-битному целому
   }
   
-  // Всегда возвращаем положительное число в виде строки
   return Math.abs(hash).toString();
 };
 
@@ -30,9 +28,10 @@ const verifyPassword = (password: string, hash: string): boolean => {
   return computedHash === hash;
 };
 
-// Создание или обновление тестового пользователя
-const ensureTestUser = () => {
+// Создание или обновление тестового пользователя и его книг
+const ensureTestUserAndBooks = () => {
   const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+  const books = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKS) || '[]');
   const testEmail = 'germannm@vk.com';
   const testPassword = 'Germ@nnM3';
   
@@ -56,7 +55,44 @@ const ensureTestUser = () => {
     console.log('Обновлен пароль тестового пользователя');
   }
   
+  // Проверяем, есть ли у пользователя тестовая книга
+  const userBooks = books.filter((book: Book) => book.authorId === testUser.id);
+  console.log('Найдено книг пользователя:', userBooks.length);
+  
+  if (userBooks.length === 0) {
+    // Создаем тестовую книгу для пользователя
+    const testBook: Book = {
+      id: 'test-book-hermann-' + Date.now(),
+      title: 'Тестовая книга Германа',
+      description: 'Это тестовая книга для проверки функциональности системы',
+      genre: 'Фантастика',
+      coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+      authorId: testUser.id,
+      status: 'published',
+      views: 5,
+      isFavorite: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    books.push(testBook);
+    console.log('Создана тестовая книга для пользователя');
+  } else {
+    // Обновляем authorId существующих книг, если они не совпадают
+    let booksUpdated = false;
+    books.forEach((book: Book) => {
+      if (book.title && book.title.includes('Герман') && book.authorId !== testUser.id) {
+        book.authorId = testUser.id;
+        booksUpdated = true;
+        console.log('Обновлен authorId для книги:', book.title);
+      }
+    });
+    if (booksUpdated) {
+      console.log('Обновлены связи книг с пользователем');
+    }
+  }
+  
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
   console.log('Тестовый пользователь сохранен с хешем пароля:', correctHash);
   return testUser;
 };
@@ -87,8 +123,8 @@ export const saveUser = (user: Omit<User, 'id' | 'createdAt'>): User => {
 };
 
 export const getUsers = (): User[] => {
-  // Всегда обеспечиваем наличие тестового пользователя
-  ensureTestUser();
+  // Всегда обеспечиваем наличие тестового пользователя и его книг
+  ensureTestUserAndBooks();
   
   const users = localStorage.getItem(STORAGE_KEYS.USERS);
   return users ? JSON.parse(users) : [];
@@ -180,7 +216,11 @@ export const incrementBookViews = (bookId: string): void => {
 };
 
 export const getUserBooks = (userId: string): Book[] => {
-  return getBooks().filter(book => book.authorId === userId);
+  const books = getBooks();
+  const userBooks = books.filter(book => book.authorId === userId);
+  console.log(`Поиск книг для пользователя ${userId}:`, userBooks.length);
+  console.log('Все книги в базе:', books.map(b => ({ title: b.title, authorId: b.authorId })));
+  return userBooks;
 };
 
 export const getPublishedBooks = (): Book[] => {

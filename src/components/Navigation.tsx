@@ -2,11 +2,13 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTelegram } from '@/hooks/useTelegram';
 import { Button } from '@/components/ui/button';
 import { Book, Heart, Plus, LogOut, Menu, X, BookOpen, User } from 'lucide-react';
 
 const Navigation = () => {
   const { user, logout } = useAuth();
+  const { isTelegramApp, user: tgUser } = useTelegram();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -25,7 +27,14 @@ const Navigation = () => {
       <div className="flex items-center justify-between">
         <Link to="/library" className="flex items-center space-x-2">
           <Book className="h-8 w-8 text-amber-400" />
-          <span className="text-xl font-bold gradient-text">BookCraft</span>
+          <span className="text-xl font-bold gradient-text">
+            BookCraft
+            {isTelegramApp && (
+              <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full ml-2">
+                Telegram
+              </span>
+            )}
+          </span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -49,6 +58,9 @@ const Navigation = () => {
             <>
               <div className="flex items-center space-x-2 text-gray-300">
                 <span>{user.name}</span>
+                {isTelegramApp && tgUser && (
+                  <span className="text-xs text-blue-400">(@{tgUser.username || tgUser.first_name})</span>
+                )}
               </div>
               
               <Button 
@@ -96,8 +108,11 @@ const Navigation = () => {
           
           {user && (
             <div className="flex items-center justify-between pt-2 border-t border-white/20">
-              <div className="flex items-center space-x-2 text-gray-300">
+              <div className="flex flex-col space-y-1 text-gray-300">
                 <span>{user.name}</span>
+                {isTelegramApp && tgUser && (
+                  <span className="text-xs text-blue-400">(@{tgUser.username || tgUser.first_name})</span>
+                )}
               </div>
               <Button 
                 onClick={() => {
