@@ -107,7 +107,19 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
     try {
       console.log('🔄 Авторизация через Telegram:', telegramData);
       
-      // Сначала синхронизируем пользователя в базе
+      // Проверяем, существует ли уже пользователь
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('telegram_id', telegramData.id)
+        .maybeSingle();
+      
+      if (existingUser) {
+        console.log('✅ Пользователь уже существует:', existingUser.name);
+        return { error: null };
+      }
+      
+      // Синхронизируем нового пользователя
       const { data, error } = await supabase.rpc('sync_telegram_data', {
         p_telegram_id: telegramData.id,
         p_data: {
@@ -122,24 +134,7 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         return { error };
       }
       
-      console.log('✅ Пользователь синхронизирован:', data);
-      
-      // Получаем пользователя из базы
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('telegram_id', telegramData.id)
-        .single();
-        
-      if (userError || !userData) {
-        console.error('❌ Пользователь не найден после синхронизации:', userError);
-        return { error: userError || new Error('Пользователь не найден') };
-      }
-      
-      // Создаем фиктивную сессию для Telegram пользователя
-      // В реальном приложении здесь должна быть интеграция с Supabase auth
-      console.log('✅ Telegram авторизация успешна для пользователя:', userData.name);
-      
+      console.log('✅ Новый пользователь создан:', data);
       return { error: null };
     } catch (error) {
       console.error('❌ Ошибка авторизации через Telegram:', error);

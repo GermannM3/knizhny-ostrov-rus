@@ -20,8 +20,10 @@ const TelegramAuth = () => {
         
         if (!error) {
           console.log('✅ Авторизация успешна, загружаем данные...');
-          // Загружаем данные после успешной авторизации
-          await sync();
+          // Небольшая задержка перед синхронизацией
+          setTimeout(async () => {
+            await sync();
+          }, 500);
         } else {
           console.error('❌ Ошибка авторизации:', error);
         }
@@ -32,7 +34,9 @@ const TelegramAuth = () => {
       }
     };
 
-    processAuth();
+    // Добавляем задержку для избежания дублированных запросов
+    const timeoutId = setTimeout(processAuth, 1000);
+    return () => clearTimeout(timeoutId);
   }, [isReady, isTelegramWebApp, user, authProcessed, signInWithTelegram, sync]);
 
   // Инициализация WebApp
