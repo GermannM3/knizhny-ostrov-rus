@@ -165,11 +165,16 @@ export const bookCovers = {
   ]
 };
 
+// Export genreCovers as an alias to bookCovers for consistency
+export const genreCovers = bookCovers;
+
+// Create an array of all covers for getRandomCover
+const allCovers = Object.values(bookCovers).flat();
+
 export const getRandomCover = (): string => {
-  const allCovers = Object.values(bookCovers).flat();
   return allCovers[Math.floor(Math.random() * allCovers.length)];
 };
 
 export const getCoversByGenre = (genre: string): string[] => {
-  return bookCovers[genre] || [getRandomCover()];
+  return bookCovers[genre as keyof typeof bookCovers] || [getRandomCover()];
 };

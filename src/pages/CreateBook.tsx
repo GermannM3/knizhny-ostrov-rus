@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,15 +26,15 @@ const CreateBook = () => {
   const handleGenreChange = (genre: string) => {
     setFormData({...formData, genre});
     // Автоматически предлагаем обложки для выбранного жанра
-    const genreSpecificCovers = genreCovers[genre as keyof typeof genreCovers] || bookCovers.slice(0, 5);
+    const genreSpecificCovers = genreCovers[genre as keyof typeof genreCovers] || Object.values(bookCovers).flat().slice(0, 5);
     if (genreSpecificCovers.length > 0) {
       setSelectedCover(genreSpecificCovers[0]);
     }
   };
 
   const getGenreCovers = () => {
-    if (!formData.genre) return bookCovers.slice(0, 5);
-    return genreCovers[formData.genre as keyof typeof genreCovers] || bookCovers.slice(0, 5);
+    if (!formData.genre) return Object.values(bookCovers).flat().slice(0, 5);
+    return genreCovers[formData.genre as keyof typeof genreCovers] || Object.values(bookCovers).flat().slice(0, 5);
   };
 
   const handleSubmit = (e: React.FormEvent) => {

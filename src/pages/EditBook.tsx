@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -62,8 +61,8 @@ const EditBook = () => {
   };
 
   const getGenreCovers = () => {
-    if (!formData.genre) return bookCovers.slice(0, 10);
-    return genreCovers[formData.genre as keyof typeof genreCovers] || bookCovers.slice(0, 10);
+    if (!formData.genre) return Object.values(bookCovers).flat().slice(0, 10);
+    return genreCovers[formData.genre as keyof typeof genreCovers] || Object.values(bookCovers).flat().slice(0, 10);
   };
 
   const handleSave = () => {
