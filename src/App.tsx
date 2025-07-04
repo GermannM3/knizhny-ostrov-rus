@@ -45,18 +45,15 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // Автоматическая синхронизация при загрузке Telegram WebApp
+  // Автоматическая синхронизация ТОЛЬКО при загрузке Telegram WebApp
   useEffect(() => {
     if (isReady && isTelegramApp) {
       const initSync = async () => {
         try {
-          console.log('🚀 Инициализируем синхронизацию для Telegram WebApp');
-          
-          // Импортируем новый синхронизатор
-          const { useTelegramSync } = await import('@/utils/telegramSync');
+          console.log('🚀 Инициализируем автоматическую синхронизацию для Telegram WebApp');
           
           // Ждем небольшую задержку для полной инициализации
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
           // Создаем экземпляр синхронизатора и выполняем полную синхронизацию
           const { TelegramRPCSync } = await import('@/utils/telegramSync');
@@ -69,19 +66,23 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
           
           if (result) {
             console.log('✅ Автоматическая синхронизация завершена успешно');
+            // Принудительно обновляем страницу для отображения синхронизированных данных
+            setTimeout(() => window.location.reload(), 1000);
           } else {
             console.log('⚠️ Автоматическая синхронизация завершена с предупреждениями');
           }
-          
-          // Принудительно обновляем страницу для отображения синхронизированных данных
-          window.location.reload();
           
         } catch (error) {
           console.error('❌ Ошибка автоматической синхронизации:', error);
         }
       };
       
-      initSync();
+      // Запускаем синхронизацию только один раз
+      const hasAutoSynced = sessionStorage.getItem('telegram_auto_synced');
+      if (!hasAutoSynced) {
+        sessionStorage.setItem('telegram_auto_synced', 'true');
+        initSync();
+      }
     }
   }, [isReady, isTelegramApp]);
 

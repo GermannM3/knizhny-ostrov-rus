@@ -6,10 +6,11 @@ const SYNC_KEYS = [
   'bookplatform_users',
   'bookplatform_books', 
   'bookplatform_chapters',
-  'bookplatform_current_user'
+  'bookplatform_current_user',
+  'bookplatform_purchases'
 ];
 
-// Простой RPC-подобный синхронизатор
+// Улучшенный RPC-подобный синхронизатор
 export class TelegramRPCSync {
   private tg: ReturnType<typeof useTelegram>;
   
@@ -17,77 +18,57 @@ export class TelegramRPCSync {
     this.tg = telegramHook;
   }
 
-  // Основной метод синхронизации - Telegram как клиент запрашивает данные у веб-версии
-  async syncFromMaster(): Promise<boolean> {
-    if (!this.tg.cloudStorageReady || !this.tg.isTelegramApp) {
-      console.log('Telegram синхронизация недоступна');
+  // Отправляем данные из localStorage в облако (веб-версия -> облако)
+  async syncToCloud(): Promise<boolean> {
+    if (!this.tg.cloudStorageReady) {
+      console.log('❌ Telegram Cloud Storage недоступен для отправки');
       return false;
     }
 
-    console.log('🔄 Начинаем синхронизацию данных с мастер-версии...');
+    console.log('🌐 Отправляем данные из веб-версии в облако...');
     let syncSuccess = true;
 
     try {
-      // Получаем текущий timestamp синхронизации
-      const lastSyncTime = await this.getLastSyncTime();
-      console.log('Последняя синхронизация:', new Date(lastSyncTime).toLocaleString());
-
       // Синхронизируем каждый ключ
       for (const key of SYNC_KEYS) {
         try {
-          await this.syncSingleKey(key);
+          const localData = localStorage.getItem(key);
+          if (localData) {
+            console.log(`📤 Отправляем в облако: ${key}`);
+            await this.tg.setCloudData(key, localData);
+          } else {
+            console.log(`📋 Нет локальных данных для ключа: ${key}`);
+          }
         } catch (error) {
-          console.error(`❌ Ошибка синхронизации ключа ${key}:`, error);
+          console.error(`❌ Ошибка отправки ключа ${key}:`, error);
           syncSuccess = false;
         }
       }
 
-      // Обновляем время последней синхронизации
+      // Обновляем время синхронизации
       if (syncSuccess) {
         await this.updateSyncTime();
-        console.log('✅ Синхронизация завершена успешно');
+        console.log('✅ Отправка в облако завершена успешно');
       } else {
-        console.log('⚠️ Синхронизация завершена с ошибками');
+        console.log('⚠️ Отправка в облако завершена с ошибками');
       }
 
     } catch (error) {
-      console.error('❌ Критическая ошибка синхронизации:', error);
+      console.error('❌ Критическая ошибка отправки в облако:', error);
       syncSuccess = false;
     }
 
     return syncSuccess;
   }
 
-  // Синхронизируем один ключ
-  private async syncSingleKey(key: string): Promise<void> {
-    // Получаем данные из localStorage (мастер-источник)
-    const masterData = localStorage.getItem(key);
-    
-    if (!masterData) {
-      console.log(`📋 Нет данных для ключа ${key} в мастер-версии`);
-      return;
-    }
-
-    // Получаем данные из Telegram Cloud Storage
-    const cloudData = await this.tg.getCloudData(key);
-
-    // Если данные отличаются, обновляем облако
-    if (masterData !== cloudData) {
-      console.log(`🔄 Обновляем облачные данные для ключа: ${key}`);
-      await this.tg.setCloudData(key, masterData);
-    } else {
-      console.log(`✅ Данные для ключа ${key} уже синхронизированы`);
-    }
-  }
-
-  // Загружаем данные из облака в localStorage (клиентский режим)
+  // Загружаем данные из облака в localStorage (облако -> Telegram WebApp)
   async loadFromCloud(): Promise<boolean> {
-    if (!this.tg.cloudStorageReady || !this.tg.isTelegramApp) {
-      console.log('Загрузка из облака недоступна');
+    if (!this.tg.cloudStorageReady) {
+      console.log('❌ Telegram Cloud Storage недоступен для загрузки');
       return false;
     }
 
-    console.log('📥 Загружаем данные из Telegram Cloud Storage...');
+    console.log('📥 Загружаем данные из облака в Telegram WebApp...');
     let loadSuccess = true;
 
     for (const key of SYNC_KEYS) {
@@ -95,7 +76,7 @@ export class TelegramRPCSync {
         const cloudData = await this.tg.getCloudData(key);
         if (cloudData) {
           localStorage.setItem(key, cloudData);
-          console.log(`✅ Загружен ключ: ${key}`);
+          console.log(`✅ Загружен из облака: ${key}`);
         } else {
           console.log(`📋 Нет облачных данных для ключа: ${key}`);
         }
@@ -106,6 +87,22 @@ export class TelegramRPCSync {
     }
 
     return loadSuccess;
+  }
+
+  // Полная синхронизация для Telegram WebApp (загрузка + отправка)
+  async fullSync(): Promise<boolean> {
+    console.log('🔄 Запускаем полную синхронизацию в Telegram WebApp...');
+    
+    // Сначала загружаем данные из облака
+    const loadResult = await this.loadFromCloud();
+    
+    // Небольшая пауза для обработки загруженных данных
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Затем отправляем обновленные данные обратно в облако
+    const syncResult = await this.syncToCloud();
+    
+    return loadResult && syncResult;
   }
 
   // Получаем время последней синхронизации
@@ -126,19 +123,6 @@ export class TelegramRPCSync {
       console.error('Ошибка обновления времени синхронизации:', error);
     }
   }
-
-  // Полная синхронизация: сначала загружаем из облака, потом обновляем облако
-  async fullSync(): Promise<boolean> {
-    console.log('🔄 Запускаем полную синхронизацию...');
-    
-    // Сначала загружаем данные из облака
-    const loadResult = await this.loadFromCloud();
-    
-    // Затем синхронизируем текущие данные в облако
-    const syncResult = await this.syncFromMaster();
-    
-    return loadResult && syncResult;
-  }
 }
 
 // Хук для использования синхронизации
@@ -147,14 +131,14 @@ export const useTelegramSync = () => {
   const sync = new TelegramRPCSync(tg);
   
   return {
-    // Основной метод синхронизации
+    // Полная синхронизация (для Telegram WebApp)
     sync: () => sync.fullSync(),
     // Только загрузка из облака
     loadFromCloud: () => sync.loadFromCloud(),
-    // Только отправка в облако
-    syncToCloud: () => sync.syncFromMaster(),
+    // Только отправка в облако (для веб-версии)
+    syncToCloud: () => sync.syncToCloud(),
     // Готовность к синхронизации
-    isReady: tg.cloudStorageReady && tg.isTelegramApp,
+    isReady: tg.cloudStorageReady,
     // Telegram-режим
     isTelegramApp: tg.isTelegramApp
   };

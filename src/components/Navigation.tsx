@@ -1,21 +1,26 @@
+
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTelegram } from '@/hooks/useTelegram';
 import { Button } from '@/components/ui/button';
-import { Book, Heart, Plus, LogOut, Menu, X, BookOpen, User } from 'lucide-react';
+import { Book, Heart, Plus, LogOut, Menu, X, BookOpen, User, RefreshCw } from 'lucide-react';
 import { useTelegramSync } from '@/utils/telegramSync';
+import { useToast } from '@/hooks/use-toast';
 
 const Navigation = () => {
   const { user, logout } = useAuth();
   const { isTelegramApp, user: tgUser } = useTelegram();
-  const { isReady: syncReady, sync } = useTelegramSync();
+  const { isReady: syncReady, sync, syncToCloud, loadFromCloud } = useTelegramSync();
+  const { toast } = useToast();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
   const navItems = [
     { path: '/library', label: 'Библиотека', icon: BookOpen },
+    { path: '/find-books', label: 'Найти книги', icon: BookOpen },
+    { path: '/purchased-books', label: 'Купленные книги', icon: Heart },
     { path: '/dashboard', label: 'Мои книги', icon: Book },
     { path: '/create', label: 'Создать книгу', icon: Plus },
     { path: '/favorites', label: 'Избранное', icon: Heart },
@@ -25,26 +30,76 @@ const Navigation = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const handleSync = async () => {
-    if (!syncReady || syncing) return;
+    if (syncing) return;
     
     setSyncing(true);
     try {
-      console.log('🔄 Запускаем ручную синхронизацию...');
-      const result = await sync();
+      console.log('🔄 Запускаем синхронизацию...');
       
-      if (result) {
-        console.log('✅ Ручная синхронизация успешна');
-        // Обновляем страницу для отображения синхронизированных данных
-        window.location.reload();
+      if (isTelegramApp) {
+        // В Telegram WebApp: загружаем данные из облака и синхронизируем обратно
+        console.log('📱 Telegram WebApp: полная синхронизация');
+        const result = await sync();
+        
+        if (result) {
+          console.log('✅ Синхронизация в Telegram WebApp успешна');
+          toast({
+            title: "Синхронизация выполнена",
+            description: "Данные успешно синхронизированы с облаком",
+          });
+          // Обновляем страницу для отображения синхронизированных данных
+          setTimeout(() => window.location.reload(), 500);
+        } else {
+          console.log('⚠️ Синхронизация в Telegram WebApp с предупреждениями');
+          toast({
+            title: "Синхронизация частично выполнена",
+            description: "Некоторые данные могли не синхронизироваться",
+            variant: "destructive",
+          });
+        }
       } else {
-        console.log('⚠️ Синхронизация завершена с предупреждениями');
+        // В веб-версии: отправляем данные в облако
+        console.log('🌐 Веб-версия: отправляем данные в облако');
+        if (syncReady) {
+          const result = await syncToCloud();
+          
+          if (result) {
+            console.log('✅ Отправка данных в облако успешна');
+            toast({
+              title: "Данные отправлены в облако",
+              description: "Ваши изменения синхронизированы с Telegram",
+            });
+          } else {
+            console.log('⚠️ Отправка данных в облако с ошибками');
+            toast({
+              title: "Ошибка синхронизации",
+              description: "Не удалось отправить данные в облако",
+              variant: "destructive",
+            });
+          }
+        } else {
+          toast({
+            title: "Синхронизация недоступна",
+            description: "Telegram Cloud Storage недоступен",
+            variant: "destructive",
+          });
+        }
       }
+      
     } catch (error) {
-      console.error('❌ Ошибка ручной синхронизации:', error);
+      console.error('❌ Ошибка синхронизации:', error);
+      toast({
+        title: "Ошибка синхронизации",
+        description: "Произошла ошибка при синхронизации данных",
+        variant: "destructive",
+      });
     } finally {
       setSyncing(false);
     }
   };
+
+  // Показываем кнопку синхронизации если есть Telegram WebApp или если это веб-версия с доступом к Cloud Storage
+  const showSyncButton = isTelegramApp || syncReady;
 
   return (
     <nav className="glass-card m-4 p-4 sticky top-4 z-50">
@@ -54,21 +109,9 @@ const Navigation = () => {
           <div className="flex items-center">
             <span className="text-xl font-bold gradient-text">BookCraft</span>
             {isTelegramApp && (
-              <div className="flex items-center space-x-2 ml-2">
-                <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                  Telegram
-                </span>
-                {syncReady && (
-                  <button
-                    onClick={handleSync}
-                    disabled={syncing}
-                    className="text-xs bg-green-500 text-white px-2 py-1 rounded-full hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    title="Синхронизировать данные с веб-версией"
-                  >
-                    {syncing ? '🔄' : '↻'}
-                  </button>
-                )}
-              </div>
+              <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full ml-2">
+                Telegram
+              </span>
             )}
           </div>
         </Link>
@@ -98,6 +141,19 @@ const Navigation = () => {
                   <span className="text-xs text-blue-400">(@{tgUser.username || tgUser.first_name})</span>
                 )}
               </div>
+              
+              {showSyncButton && (
+                <Button
+                  onClick={handleSync}
+                  disabled={syncing}
+                  variant="outline"
+                  size="sm"
+                  className="text-green-400 border-green-500/50 hover:bg-green-500/20"
+                  title={isTelegramApp ? "Синхронизировать с веб-версией" : "Отправить данные в Telegram"}
+                >
+                  <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                </Button>
+              )}
               
               <Button 
                 onClick={logout}
@@ -151,15 +207,17 @@ const Navigation = () => {
                 )}
               </div>
               <div className="flex items-center space-x-2">
-                {isTelegramApp && syncReady && (
-                  <button
+                {showSyncButton && (
+                  <Button
                     onClick={handleSync}
                     disabled={syncing}
-                    className="text-xs bg-green-500 text-white px-2 py-1 rounded-full hover:bg-green-600 disabled:opacity-50"
-                    title="Синхронизировать"
+                    variant="outline"
+                    size="sm"
+                    className="text-green-400 border-green-500/50"
+                    title={isTelegramApp ? "Синхронизировать" : "Отправить в Telegram"}
                   >
-                    {syncing ? '🔄' : '↻'}
-                  </button>
+                    <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                  </Button>
                 )}
                 <Button 
                   onClick={() => {
