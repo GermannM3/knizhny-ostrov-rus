@@ -65,16 +65,33 @@ export const useTelegram = () => {
   useEffect(() => {
     // Проверяем наличие Telegram WebApp
     const app = window.Telegram?.WebApp;
-    const isTelegramEnv = !!(app || window.location.href.includes('tgWebAppData'));
+    const isTelegramEnv = !!(
+      app || 
+      window.location.href.includes('tgWebAppData') ||
+      window.navigator.userAgent.includes('TelegramBot') ||
+      window.parent !== window // проверка на iframe
+    );
     
-    console.log('🔍 Проверка Telegram среды:', {
+    console.log('🔍 Проверка Telegram среды v2:', {
       hasWebApp: !!app,
       isTelegramEnv,
       userAgent: navigator.userAgent,
-      href: window.location.href
+      href: window.location.href,
+      isIframe: window.parent !== window,
+      version: '2024-07-04-v2'
     });
     
-    if (app || isTelegramEnv) {
+    if (app) {
+      console.log('✅ Telegram WebApp найден, инициализируем...');
+      app.ready();
+      app.expand();
+      
+      // Принудительно обновляем приложение если это возможно
+      if (app.version && parseFloat(app.version) >= 6.0) {
+        console.log('🔄 Обновляем Telegram WebApp версия:', app.version);
+      }
+      
+      setTg(app);
       app.ready();
       app.expand();
       setTg(app);
