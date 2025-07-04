@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -83,7 +82,7 @@ const Navigation = () => {
       console.error('Ошибка синхронизации:', error);
       toast({
         title: "Ошибка синхронизации",
-        description: "Произошла неожиданная ошибка",
+        description: `Произошла ошибка: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`,
         variant: "destructive"
       });
     } finally {
