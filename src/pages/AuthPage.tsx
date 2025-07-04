@@ -122,8 +122,8 @@ const AuthPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Telegram авторизация - показываем всегда в Telegram WebApp */}
-            {(window.Telegram?.WebApp || isInTelegram) && (
+            {/* Telegram авторизация - показываем в Telegram WebApp */}
+            {isInTelegram && (
               <div className="mb-6">
                 <Button
                   onClick={handleTelegramAuth}

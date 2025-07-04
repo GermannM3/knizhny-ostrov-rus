@@ -63,8 +63,18 @@ export const useTelegram = () => {
   const [cloudStorageReady, setCloudStorageReady] = useState(false);
 
   useEffect(() => {
+    // Проверяем наличие Telegram WebApp
     const app = window.Telegram?.WebApp;
-    if (app) {
+    const isTelegramEnv = !!(app || window.location.href.includes('tgWebAppData'));
+    
+    console.log('🔍 Проверка Telegram среды:', {
+      hasWebApp: !!app,
+      isTelegramEnv,
+      userAgent: navigator.userAgent,
+      href: window.location.href
+    });
+    
+    if (app || isTelegramEnv) {
       app.ready();
       app.expand();
       setTg(app);
@@ -98,9 +108,10 @@ export const useTelegram = () => {
         console.log('💡 Обновите Telegram или используйте веб-версию');
       }
       
-      console.log('Telegram Web App инициализирован:', app);
+      console.log('✅ Telegram Web App инициализирован:', app);
     } else {
-      console.log('Telegram Web App не найден, работаем как обычное веб-приложение');
+      console.log('❌ Telegram Web App не найден');
+      // В любом случае помечаем как готовый
       setIsReady(true);
     }
   }, []);
@@ -180,7 +191,7 @@ export const useTelegram = () => {
     onClose,
     onToggleButton,
     isTelegramApp: !!tg,
-    isInTelegram: !!tg,
+    isInTelegram: !!(tg || window.location.href.includes('tgWebAppData')),
     cloudStorageReady,
     setCloudData,
     getCloudData
