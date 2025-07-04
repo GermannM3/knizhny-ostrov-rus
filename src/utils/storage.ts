@@ -110,6 +110,38 @@ const ensureTestUserAndBooks = () => {
   return testUser;
 };
 
+// Обновленная функция для создания или получения пользователя по telegram_id
+export const createOrGetUserByTelegramId = (telegramId: number, telegramUser: any): User => {
+  const users = getUsers();
+  
+  // Ищем существующего пользователя по telegram_id
+  let existingUser = users.find(u => u.telegram_id === telegramId);
+  
+  if (existingUser) {
+    console.log('👤 Найден существующий пользователь по Telegram ID:', existingUser.email);
+    return existingUser;
+  }
+  
+  // Создаем нового пользователя на основе Telegram профиля
+  const newUser: User = {
+    id: `telegram_${telegramId}_${Date.now()}`,
+    email: `telegram_${telegramId}@bookcraft.ru`,
+    name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
+    password: hashPassword(`telegram_${telegramId}_${Date.now()}`), // Случайный пароль
+    telegram_id: telegramId,
+    createdAt: new Date()
+  };
+  
+  users.push(newUser);
+  localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+  
+  // Автоматически авторизуем пользователя
+  localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(newUser));
+  
+  console.log('✅ Создан новый пользователь из Telegram:', newUser.name, newUser.telegram_id);
+  return newUser;
+};
+
 // Обновление пользователя
 export const updateUser = (userId: string, updates: Partial<User>): User | null => {
   const users = getUsers();
@@ -204,7 +236,7 @@ export const getUserByEmail = (email: string): User | null => {
   return users.find(user => user.email === email) || null;
 };
 
-// Книги
+// Обновленная функция сохранения книги с поддержкой is_public
 export const saveBook = (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>): Book => {
   const books = getBooks();
   const newBook: Book = {
@@ -214,6 +246,7 @@ export const saveBook = (book: Omit<Book, 'id' | 'createdAt' | 'updatedAt'>): Bo
     isFavorite: false,
     source: book.source || 'internal',
     format: book.format || 'bookcraft',
+    is_public: book.is_public ?? false, // По умолчанию приватная
     createdAt: new Date(),
     updatedAt: new Date()
   };
@@ -252,6 +285,46 @@ export const getUserBooks = (userId: string): Book[] => {
 
 export const getPublishedBooks = (): Book[] => {
   return getBooks().filter(book => book.status === 'published' && book.source !== 'external');
+};
+
+// Получение всех публичных книг
+export const getPublicBooks = (): Book[] => {
+  const books = getBooks();
+  const users = getUsers();
+  
+  return books
+    .filter(book => book.is_public && book.source !== 'external')
+    .map(book => {
+      const author = users.find(u => u.id === book.authorId);
+      return {
+        ...book,
+        author: author ? {
+          name: author.name,
+          telegram_id: author.telegram_id
+        } : undefined
+      };
+    })
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+};
+
+// Получение книг других авторов (исключая текущего пользователя)
+export const getOtherAuthorsBooks = (currentUserId: string): Book[] => {
+  const books = getBooks();
+  const users = getUsers();
+  
+  return books
+    .filter(book => book.is_public && book.authorId !== currentUserId && book.source !== 'external')
+    .map(book => {
+      const author = users.find(u => u.id === book.authorId);
+      return {
+        ...book,
+        author: author ? {
+          name: author.name,
+          telegram_id: author.telegram_id
+        } : undefined
+      };
+    })
+    .sort((a, b) => (b.views || 0) - (a.views || 0));
 };
 
 export const updateBook = (bookId: string, updates: Partial<Book>): Book | null => {
@@ -325,31 +398,38 @@ export const deleteChapter = (chapterId: string): boolean => {
   return false;
 };
 
-// Прогресс чтения
+// Обновленные функции с поддержкой telegram_id
 export const saveReadingProgress = (progress: Omit<ReadingProgress, 'id' | 'lastReadAt'>): ReadingProgress => {
   const progressList = getReadingProgress();
+  const currentUser = getCurrentUser();
   
-  // Проверяем, есть ли уже прогресс для этой книги и пользователя
   const existingIndex = progressList.findIndex(p => p.userId === progress.userId && p.bookId === progress.bookId);
   
   if (existingIndex !== -1) {
-    // Обновляем существующий прогресс
     progressList[existingIndex] = {
       ...progressList[existingIndex],
       ...progress,
+      telegram_id: currentUser?.telegram_id,
       lastReadAt: new Date()
     };
     localStorage.setItem(STORAGE_KEYS.READING_PROGRESS, JSON.stringify(progressList));
+    
+    // Логгер активности чтения
+    console.log(`📖 Пользователь ${currentUser?.name} (TG: ${currentUser?.telegram_id}) читает книгу ID: ${progress.bookId}`);
+    
     return progressList[existingIndex];
   } else {
-    // Создаем новый прогресс
     const newProgress: ReadingProgress = {
       ...progress,
       id: Date.now().toString(),
+      telegram_id: currentUser?.telegram_id,
       lastReadAt: new Date()
     };
     progressList.push(newProgress);
     localStorage.setItem(STORAGE_KEYS.READING_PROGRESS, JSON.stringify(progressList));
+    
+    console.log(`📖 Пользователь ${currentUser?.name} (TG: ${currentUser?.telegram_id}) начал читать книгу ID: ${progress.bookId}`);
+    
     return newProgress;
   }
 };
@@ -364,11 +444,10 @@ export const getUserReadingProgress = (userId: string, bookId: string): ReadingP
   return progressList.find(p => p.userId === userId && p.bookId === bookId) || null;
 };
 
-// Избранное
 export const addToFavorites = (userId: string, bookId: string): Favorite => {
   const favorites = getFavorites();
+  const currentUser = getCurrentUser();
   
-  // Проверяем, не добавлена ли уже книга в избранное
   const existing = favorites.find(f => f.userId === userId && f.bookId === bookId);
   if (existing) {
     throw new Error('Книга уже в избранном');
@@ -378,6 +457,7 @@ export const addToFavorites = (userId: string, bookId: string): Favorite => {
     id: Date.now().toString(),
     userId,
     bookId,
+    telegram_id: currentUser?.telegram_id,
     addedAt: new Date()
   };
   
@@ -427,7 +507,8 @@ export const getUserFavorites = (userId: string): Book[] => {
       isFavorite: false,
       source: 'external',
       format: 'pdf',
-      price: 299
+      price: 299,
+      is_public: true
     },
     {
       id: 'ext-2',
@@ -443,7 +524,8 @@ export const getUserFavorites = (userId: string): Book[] => {
       isFavorite: false,
       source: 'external',
       format: 'epub',
-      price: 249
+      price: 249,
+      is_public: true
     },
     {
       id: 'ext-3',
@@ -459,7 +541,8 @@ export const getUserFavorites = (userId: string): Book[] => {
       isFavorite: false,
       source: 'external',
       format: 'pdf',
-      price: 399
+      price: 399,
+      is_public: true
     },
     {
       id: 'ext-4',
@@ -475,7 +558,8 @@ export const getUserFavorites = (userId: string): Book[] => {
       isFavorite: false,
       source: 'external',
       format: 'epub',
-      price: 279
+      price: 279,
+      is_public: true
     }
   ];
   
@@ -485,12 +569,14 @@ export const getUserFavorites = (userId: string): Book[] => {
   return allBooks.filter(book => favoriteBookIds.includes(book.id));
 };
 
-// Покупки
 export const savePurchase = (purchase: Omit<Purchase, 'id' | 'purchaseDate'>): Purchase => {
   const purchases = getPurchases();
+  const currentUser = getCurrentUser();
+  
   const newPurchase: Purchase = {
     ...purchase,
     id: Date.now().toString(),
+    telegram_id: currentUser?.telegram_id,
     purchaseDate: new Date()
   };
   purchases.push(newPurchase);
@@ -542,7 +628,8 @@ export const getPurchasedBooks = (userId: string): Book[] => {
       isFavorite: false,
       source: 'external',
       format: 'pdf',
-      price: 299
+      price: 299,
+      is_public: true
     },
     {
       id: 'ext-2',
@@ -558,7 +645,8 @@ export const getPurchasedBooks = (userId: string): Book[] => {
       isFavorite: false,
       source: 'external',
       format: 'epub',
-      price: 249
+      price: 249,
+      is_public: true
     },
     {
       id: 'ext-3',
@@ -574,7 +662,8 @@ export const getPurchasedBooks = (userId: string): Book[] => {
       isFavorite: false,
       source: 'external',
       format: 'pdf',
-      price: 399
+      price: 399,
+      is_public: true
     },
     {
       id: 'ext-4',
@@ -590,7 +679,8 @@ export const getPurchasedBooks = (userId: string): Book[] => {
       isFavorite: false,
       source: 'external',
       format: 'epub',
-      price: 279
+      price: 279,
+      is_public: true
     }
   ];
   
@@ -598,4 +688,46 @@ export const getPurchasedBooks = (userId: string): Book[] => {
   const purchasedBookIds = purchases.map(p => p.bookId);
   
   return allBooks.filter(book => purchasedBookIds.includes(book.id));
+};
+
+// Функция для отладки - вывод всех книг
+export const debugLogAllBooks = () => {
+  const books = getBooks();
+  const users = getUsers();
+  
+  const booksWithAuthors = books.map(book => {
+    const author = users.find(u => u.id === book.authorId);
+    return {
+      id: book.id,
+      title: book.title,
+      author: author?.name || 'Неизвестный',
+      telegram_id: author?.telegram_id || 'Нет',
+      is_public: book.is_public,
+      views: book.views,
+      status: book.status
+    };
+  });
+  
+  console.table(booksWithAuthors);
+  console.log(`📊 Всего книг: ${books.length}, Публичных: ${books.filter(b => b.is_public).length}`);
+};
+
+// Получение статистики для профиля
+export const getUserStats = (userId: string) => {
+  const userBooks = getUserBooks(userId);
+  const progressList = getReadingProgress();
+  
+  const myBooksReaders = progressList.filter(p => {
+    const book = getBookById(p.bookId);
+    return book?.authorId === userId;
+  });
+  
+  const uniqueReaders = new Set(myBooksReaders.map(p => p.telegram_id || p.userId)).size;
+  
+  return {
+    totalBooks: userBooks.length,
+    publicBooks: userBooks.filter(b => b.is_public).length,
+    totalViews: userBooks.reduce((sum, book) => sum + (book.views || 0), 0),
+    readersCount: uniqueReaders
+  };
 };

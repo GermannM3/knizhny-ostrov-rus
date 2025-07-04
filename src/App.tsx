@@ -38,61 +38,103 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
     // Добавляем Telegram Web App скрипт если его нет
     if (!window.Telegram && !document.querySelector('script[src*="telegram-web-app.js"]')) {
       const script = document.createElement('script');
-      script.src = 'https://telegram.org/js/telegram-web-app.js';
+      script.src = 'https://telegram-web-app.js';
       script.async = true;
       document.head.appendChild(script);
       console.log('Telegram Web App скрипт добавлен');
     }
   }, []);
 
-  // Автоматическая синхронизация при загрузке Telegram WebApp
+  // Автоматическая регистрация/авторизация через Telegram
   useEffect(() => {
-    if (tg.isReady && tg.isTelegramApp) {
-      const initSync = async () => {
+    if (tg.isReady && tg.isTelegramApp && tg.telegramId && tg.user) {
+      const initTelegramUser = async () => {
         try {
-          console.log('🚀 Инициализация автоматической синхронизации...');
+          console.log('🚀 Инициализация пользователя Telegram...');
           
-          // Ждем полной инициализации
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          const { createOrGetUserByTelegramId, debugLogAllBooks, getPublicBooks } = await import('@/utils/storage');
           
-          const { fullSync } = await import('@/utils/telegramSync');
-          const result = await fullSync(tg);
+          // Создаем или получаем пользователя по telegram_id
+          const user = createOrGetUserByTelegramId(tg.telegramId!, tg.user);
+          console.log('👤 Пользователь Telegram инициализирован:', user.name, user.telegram_id);
           
-          if (!result.hasCloudStorage) {
-            console.log('⚠️ ВНИМАНИЕ: Cloud Storage недоступен');
-            console.log('📱 Обновите Telegram или используйте веб-версию для синхронизации');
-          } else if (result.success) {
-            console.log('✅ Автоматическая синхронизация выполнена');
-            // Перезагружаем страницу только если были изменения
-            setTimeout(() => window.location.reload(), 1000);
+          // Загружаем публичные книги
+          const publicBooks = getPublicBooks();
+          console.log('📚 Загружено публичных книг:', publicBooks.length);
+          
+          // Отладочный вывод всех книг
+          debugLogAllBooks();
+          
+          // Автоматическая синхронизация данных если доступна
+          if (tg.cloudStorageReady) {
+            console.log('🔄 Запуск автоматической синхронизации...');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const { fullSync } = await import('@/utils/telegramSync');
+            const result = await fullSync(tg);
+            
+            if (result.success) {
+              console.log('✅ Автоматическая синхронизация выполнена');
+              setTimeout(() => window.location.reload(), 1000);
+            } else {
+              console.log('ℹ️ Синхронизация завершена без изменений');
+            }
           } else {
-            console.log('ℹ️ Синхронизация завершена без изменений');
+            console.log('⚠️ Cloud Storage недоступен, синхронизация отключена');
           }
           
         } catch (error) {
-          console.error('❌ Ошибка автоматической синхронизации:', error);
+          console.error('❌ Ошибка инициализации Telegram пользователя:', error);
         }
       };
       
       // Выполняем только один раз за сессию
-      const hasAutoSynced = sessionStorage.getItem('telegram_auto_synced');
-      if (!hasAutoSynced) {
-        sessionStorage.setItem('telegram_auto_synced', 'true');
-        initSync();
+      const hasInitialized = sessionStorage.getItem('telegram_user_initialized');
+      if (!hasInitialized) {
+        sessionStorage.setItem('telegram_user_initialized', 'true');
+        initTelegramUser();
       }
     }
-  }, [tg.isReady, tg.isTelegramApp, tg.cloudStorageReady]);
+  }, [tg.isReady, tg.isTelegramApp, tg.telegramId, tg.user, tg.cloudStorageReady]);
+
+  // Режим гостя для обычного браузера
+  useEffect(() => {
+    if (tg.isReady && !tg.isTelegramApp) {
+      console.log('🌐 Режим веб-браузера: загружаем публичные книги');
+      
+      const loadPublicBooks = async () => {
+        try {
+          const { getPublicBooks, debugLogAllBooks } = await import('@/utils/storage');
+          const publicBooks = getPublicBooks();
+          console.log('📚 Загружено публичных книг для гостевого режима:', publicBooks.length);
+          debugLogAllBooks();
+        } catch (error) {
+          console.error('❌ Ошибка загрузки публичных книг:', error);
+        }
+      };
+      
+      loadPublicBooks();
+    }
+  }, [tg.isReady, tg.isTelegramApp]);
 
   if (!tg.isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="glass-card p-8 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto mb-4"></div>
-          <p className="text-white">Загрузка приложения...</p>
+          <p className="text-white">Загрузка BookCraft Russia...</p>
           {tg.isTelegramApp && (
-            <p className="text-gray-300 text-sm mt-2">
-              Инициализация Telegram Web App
-            </p>
+            <div className="mt-2 space-y-1">
+              <p className="text-gray-300 text-sm">
+                Инициализация Telegram Web App
+              </p>
+              {tg.telegramId && (
+                <p className="text-blue-400 text-xs">
+                  Telegram ID: {tg.telegramId}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -112,6 +154,7 @@ const AppRoutes = () => {
       } />
       <Route path="/library" element={<LibraryPage />} />
       <Route path="/find-books" element={<FindBooksPage />} />
+      <Route path="/other-authors" element={<OtherAuthorsPage />} />
       <Route path="/purchased-books" element={
         <ProtectedRoute>
           <PurchasedBooksPage />

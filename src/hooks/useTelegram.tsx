@@ -58,6 +58,7 @@ declare global {
 export const useTelegram = () => {
   const [tg, setTg] = useState<TelegramWebApp | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [telegramId, setTelegramId] = useState<number | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [cloudStorageReady, setCloudStorageReady] = useState(false);
 
@@ -67,7 +68,17 @@ export const useTelegram = () => {
       app.ready();
       app.expand();
       setTg(app);
-      setUser(app.initDataUnsafe?.user);
+      
+      const telegramUser = app.initDataUnsafe?.user;
+      setUser(telegramUser);
+      
+      // Извлекаем telegram_id
+      if (telegramUser?.id) {
+        setTelegramId(telegramUser.id);
+        console.log('📱 Telegram ID получен:', telegramUser.id);
+        console.log('👤 Пользователь Telegram:', telegramUser);
+      }
+      
       setIsReady(true);
       
       // Проверяем версию для CloudStorage
@@ -88,7 +99,6 @@ export const useTelegram = () => {
       }
       
       console.log('Telegram Web App инициализирован:', app);
-      console.log('Telegram пользователь:', app.initDataUnsafe?.user);
     } else {
       console.log('Telegram Web App не найден, работаем как обычное веб-приложение');
       setIsReady(true);
@@ -165,6 +175,7 @@ export const useTelegram = () => {
   return {
     tg,
     user,
+    telegramId,
     isReady,
     onClose,
     onToggleButton,

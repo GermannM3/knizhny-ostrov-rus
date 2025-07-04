@@ -4,6 +4,7 @@ export interface User {
   email: string;
   password: string;
   name: string;
+  telegram_id?: number;
   createdAt: Date;
 }
 
@@ -14,7 +15,12 @@ export interface Book {
   genre: string;
   status: 'draft' | 'published';
   coverImage: string;
+  coverUrl?: string; // Для совместимости
   authorId: string;
+  author?: {
+    name: string;
+    telegram_id?: number;
+  };
   createdAt: Date;
   updatedAt: Date;
   views: number;
@@ -22,6 +28,8 @@ export interface Book {
   source?: 'internal' | 'external';
   format?: 'pdf' | 'epub' | 'bookcraft';
   price?: number;
+  is_public: boolean;
+  chapters?: Chapter[];
 }
 
 export interface Chapter {
@@ -43,25 +51,26 @@ export interface Purchase {
   id: string;
   userId: string;
   bookId: string;
+  telegram_id?: number;
   purchaseDate: Date;
   paid: boolean;
 }
 
-// Новый тип для прогресса чтения
 export interface ReadingProgress {
   id: string;
   userId: string;
   bookId: string;
+  telegram_id?: number;
   currentChapter: number;
   totalChapters: number;
   lastReadAt: Date;
-  progress: number; // Процент прочтения (0-100)
+  progress: number;
 }
 
-// Новый тип для избранного
 export interface Favorite {
   id: string;
   userId: string;
   bookId: string;
+  telegram_id?: number;
   addedAt: Date;
 }
