@@ -7,52 +7,57 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'bookplatform_current_user'
 };
 
-// Улучшенное шифрование пароля
+// Исправленное стабильное хеширование пароля
 const hashPassword = (password: string): string => {
-  // Используем простое, но стабильное хеширование
-  let hash = 0;
   const salt = 'bookcraft_salt_2024';
   const combined = password + salt;
+  let hash = 0;
   
   for (let i = 0; i < combined.length; i++) {
     const char = combined.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Конвертируем в 32-битное число
+    // Приводим к 32-битному целому числу
+    hash |= 0;
   }
   
-  return Math.abs(hash).toString(36);
+  // Всегда возвращаем положительное число в виде строки
+  return Math.abs(hash).toString();
 };
 
 const verifyPassword = (password: string, hash: string): boolean => {
-  return hashPassword(password) === hash;
+  const computedHash = hashPassword(password);
+  console.log('Проверка пароля:', { computedHash, storedHash: hash, match: computedHash === hash });
+  return computedHash === hash;
 };
 
-// Создание тестового пользователя с правильным хешированием
-const createTestUser = () => {
-  const users = getUsers();
+// Создание или обновление тестового пользователя
+const ensureTestUser = () => {
+  const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
   const testEmail = 'germannm@vk.com';
+  const testPassword = 'Germ@nnM3';
   
-  // Проверяем, что тестовый пользователь не существует
-  const existingUser = users.find(u => u.email === testEmail);
-  if (existingUser) {
-    console.log('Тестовый пользователь уже существует:', existingUser);
-    // Обновляем пароль на случай изменения логики хеширования
-    existingUser.password = hashPassword('Germ@nnM3');
-    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-    return existingUser;
+  let testUser = users.find((u: User) => u.email === testEmail);
+  const correctHash = hashPassword(testPassword);
+  
+  if (!testUser) {
+    // Создаем нового тестового пользователя
+    testUser = {
+      id: 'test-user-hermann',
+      email: testEmail,
+      name: 'Герман Кенг',
+      password: correctHash,
+      createdAt: new Date()
+    };
+    users.push(testUser);
+    console.log('Создан новый тестовый пользователь');
+  } else {
+    // Обновляем пароль существующего пользователя
+    testUser.password = correctHash;
+    console.log('Обновлен пароль тестового пользователя');
   }
   
-  const testUser: User = {
-    id: 'test-user-hermann',
-    email: testEmail,
-    name: 'Герман Кенг',
-    password: hashPassword('Germ@nnM3'),
-    createdAt: new Date()
-  };
-  
-  users.push(testUser);
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  console.log('Создан тестовый пользователь:', { ...testUser, password: '[HIDDEN]' });
+  console.log('Тестовый пользователь сохранен с хешем пароля:', correctHash);
   return testUser;
 };
 
@@ -82,42 +87,45 @@ export const saveUser = (user: Omit<User, 'id' | 'createdAt'>): User => {
 };
 
 export const getUsers = (): User[] => {
+  // Всегда обеспечиваем наличие тестового пользователя
+  ensureTestUser();
+  
   const users = localStorage.getItem(STORAGE_KEYS.USERS);
-  const parsedUsers = users ? JSON.parse(users) : [];
-  
-  // Создаем тестового пользователя, если список пуст
-  if (parsedUsers.length === 0) {
-    createTestUser();
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
-  }
-  
-  return parsedUsers;
+  return users ? JSON.parse(users) : [];
 };
 
 export const loginUser = (email: string, password: string): User | null => {
+  console.log('=== НАЧАЛО ПРОЦЕССА ВХОДА ===');
+  console.log('Email:', email);
+  console.log('Пароль для проверки:', password);
+  
   const users = getUsers();
-  console.log('Попытка входа для:', email);
   console.log('Всего пользователей в базе:', users.length);
+  console.log('Пользователи:', users.map(u => ({ email: u.email, id: u.id })));
   
   const user = users.find(u => u.email === email);
   if (user) {
-    console.log('Пользователь найден:', user.email);
-    console.log('Проверяем пароль...');
+    console.log('Пользователь найден:', { email: user.email, id: user.id });
+    console.log('Сохраненный хеш пароля:', user.password);
+    
+    const inputHash = hashPassword(password);
+    console.log('Хеш введенного пароля:', inputHash);
     
     const passwordMatch = verifyPassword(password, user.password);
-    console.log('Пароль подходит:', passwordMatch);
+    console.log('Результат проверки пароля:', passwordMatch);
     
     if (passwordMatch) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-      console.log('Пользователь успешно авторизован');
+      console.log('✅ УСПЕШНЫЙ ВХОД');
       return user;
     } else {
-      console.log('Неверный пароль');
+      console.log('❌ НЕВЕРНЫЙ ПАРОЛЬ');
     }
   } else {
-    console.log('Пользователь с email', email, 'не найден');
-    console.log('Доступные пользователи:', users.map(u => u.email));
+    console.log('❌ ПОЛЬЗОВАТЕЛЬ НЕ НАЙДЕН');
   }
+  
+  console.log('=== КОНЕЦ ПРОЦЕССА ВХОДА ===');
   return null;
 };
 
@@ -166,6 +174,7 @@ export const incrementBookViews = (bookId: string): void => {
   const bookIndex = books.findIndex(book => book.id === bookId);
   if (bookIndex !== -1) {
     books[bookIndex].views = (books[bookIndex].views || 0) + 1;
+    books[bookIndex].updatedAt = new Date();
     localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(books));
   }
 };
