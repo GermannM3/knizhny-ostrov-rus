@@ -1,4 +1,5 @@
 
+
 export const genres = [
   'Фантастика',
   'Романтика',
@@ -31,10 +32,10 @@ export const bookCovers = {
     'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=300&h=400&fit=crop'
   ],
   'Романтика': [
-    'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1502086343-b4eb8a057d75?w=300&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1500673922987-e212871fec22?w=300&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1495854806015-05f2c5c07f4c?w=300&h=400&fit=crop'
   ],
   'Детектив': [
@@ -55,7 +56,7 @@ export const bookCovers = {
     'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=300&h=400&fit=crop'
   ],
   'Современная проза': [
@@ -73,7 +74,7 @@ export const bookCovers = {
     'https://images.unsplash.com/photo-1447069387593-a5de0862481e?w=300&h=400&fit=crop'
   ],
   'Драма': [
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1519791883288-dc8bd696e667?w=300&h=400&fit=crop',
@@ -94,7 +95,7 @@ export const bookCovers = {
     'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=300&h=400&fit=crop'
   ],
   'Мистика': [
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1520637836862-4d197d17c0a4?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1509909756405-be0199881695?w=300&h=400&fit=crop',
@@ -111,7 +112,7 @@ export const bookCovers = {
     'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop'
   ],
   'Биография': [
@@ -129,7 +130,7 @@ export const bookCovers = {
     'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=300&h=400&fit=crop'
   ],
   'Фэнтези': [
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1500673922987-e212871fec22?w=300&h=400&fit=crop',
@@ -157,7 +158,7 @@ export const bookCovers = {
     'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=300&h=400&fit=crop'
   ],
   'Эзотерика': [
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1520637836862-4d197d17c0a4?w=300&h=400&fit=crop',
     'https://images.unsplash.com/photo-1509909756405-be0199881695?w=300&h=400&fit=crop',
@@ -178,3 +179,4 @@ export const getRandomCover = (): string => {
 export const getCoversByGenre = (genre: string): string[] => {
   return bookCovers[genre as keyof typeof bookCovers] || [getRandomCover()];
 };
+

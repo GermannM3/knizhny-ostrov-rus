@@ -62,7 +62,7 @@ const LibraryPage = () => {
         description: 'Мистический роман Булгакова, переплетающий современность и библейские мотивы.',
         genre: 'Мистика',
         status: 'published',
-        coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+        coverImage: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=300&h=400&fit=crop',
         authorId: 'bulgakov',
         createdAt: new Date('2023-03-05'),
         updatedAt: new Date('2023-03-05'),
@@ -268,3 +268,4 @@ const LibraryPage = () => {
 };
 
 export default LibraryPage;
+
