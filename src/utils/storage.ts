@@ -7,16 +7,27 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'bookplatform_current_user'
 };
 
-// Простое шифрование пароля
+// Улучшенное шифрование пароля
 const hashPassword = (password: string): string => {
-  return btoa(password + 'salt_key_2024');
+  // Используем простое, но стабильное хеширование
+  let hash = 0;
+  const salt = 'bookcraft_salt_2024';
+  const combined = password + salt;
+  
+  for (let i = 0; i < combined.length; i++) {
+    const char = combined.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Конвертируем в 32-битное число
+  }
+  
+  return Math.abs(hash).toString(36);
 };
 
 const verifyPassword = (password: string, hash: string): boolean => {
   return hashPassword(password) === hash;
 };
 
-// Создание тестового пользователя
+// Создание тестового пользователя с правильным хешированием
 const createTestUser = () => {
   const users = getUsers();
   const testEmail = 'germannm@vk.com';
@@ -25,6 +36,9 @@ const createTestUser = () => {
   const existingUser = users.find(u => u.email === testEmail);
   if (existingUser) {
     console.log('Тестовый пользователь уже существует:', existingUser);
+    // Обновляем пароль на случай изменения логики хеширования
+    existingUser.password = hashPassword('Germ@nnM3');
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
     return existingUser;
   }
   
@@ -38,7 +52,7 @@ const createTestUser = () => {
   
   users.push(testUser);
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
-  console.log('Создан тестовый пользователь:', testUser);
+  console.log('Создан тестовый пользователь:', { ...testUser, password: '[HIDDEN]' });
   return testUser;
 };
 
@@ -83,20 +97,26 @@ export const getUsers = (): User[] => {
 export const loginUser = (email: string, password: string): User | null => {
   const users = getUsers();
   console.log('Попытка входа для:', email);
-  console.log('Доступные пользователи:', users.map(u => ({ email: u.email, name: u.name })));
+  console.log('Всего пользователей в базе:', users.length);
   
   const user = users.find(u => u.email === email);
   if (user) {
     console.log('Пользователь найден:', user.email);
+    console.log('Проверяем пароль...');
+    
     const passwordMatch = verifyPassword(password, user.password);
     console.log('Пароль подходит:', passwordMatch);
     
     if (passwordMatch) {
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+      console.log('Пользователь успешно авторизован');
       return user;
+    } else {
+      console.log('Неверный пароль');
     }
   } else {
-    console.log('Пользователь не найден');
+    console.log('Пользователь с email', email, 'не найден');
+    console.log('Доступные пользователи:', users.map(u => u.email));
   }
   return null;
 };
@@ -108,6 +128,11 @@ export const getCurrentUser = (): User | null => {
 
 export const logoutUser = (): void => {
   localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+};
+
+export const getUserByEmail = (email: string): User | null => {
+  const users = getUsers();
+  return users.find(user => user.email === email) || null;
 };
 
 // Книги

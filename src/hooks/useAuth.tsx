@@ -20,33 +20,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const currentUser = getCurrentUser();
     if (currentUser) {
+      console.log('Найден сохраненный пользователь:', currentUser.email);
       setUser(currentUser);
       setIsAuthenticated(true);
+    } else {
+      console.log('Сохраненный пользователь не найден');
     }
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    const loggedUser = loginUser(email, password);
-    if (loggedUser) {
-      setUser(loggedUser);
-      setIsAuthenticated(true);
-      return true;
+    try {
+      console.log('Попытка входа через AuthProvider:', email);
+      const loggedUser = loginUser(email, password);
+      if (loggedUser) {
+        console.log('Пользователь успешно вошел:', loggedUser.email);
+        setUser(loggedUser);
+        setIsAuthenticated(true);
+        return true;
+      } else {
+        console.log('Ошибка входа в AuthProvider');
+        return false;
+      }
+    } catch (error) {
+      console.error('Ошибка в AuthProvider.login:', error);
+      return false;
     }
-    return false;
   };
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
     try {
+      console.log('Попытка регистрации через AuthProvider:', email);
       const newUser = saveUser({ email, password, name });
+      console.log('Пользователь успешно зарегистрирован:', newUser.email);
       setUser(newUser);
       setIsAuthenticated(true);
       return true;
     } catch (error) {
+      console.error('Ошибка в AuthProvider.register:', error);
       return false;
     }
   };
 
   const logout = () => {
+    console.log('Выход из системы');
     logoutUser();
     setUser(null);
     setIsAuthenticated(false);

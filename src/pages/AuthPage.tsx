@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Book, Home, Eye, EyeOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { getUsers } from '@/utils/storage';
+import { getUserByEmail } from '@/utils/storage';
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -32,6 +32,7 @@ const AuthPage = () => {
       let success = false;
       
       if (isLogin) {
+        console.log('Попытка входа с данными:', { email: formData.email, password: '[HIDDEN]' });
         success = await login(formData.email, formData.password);
         if (success) {
           toast({
@@ -42,7 +43,7 @@ const AuthPage = () => {
         } else {
           toast({
             title: "Ошибка входа",
-            description: "Неверный email или пароль.",
+            description: "Неверный email или пароль. Проверьте данные или используйте восстановление пароля.",
             variant: "destructive",
           });
         }
@@ -57,15 +58,16 @@ const AuthPage = () => {
         } else {
           toast({
             title: "Ошибка регистрации",
-            description: "Попробуйте другой email.",
+            description: "Пользователь с таким email уже существует. Попробуйте войти или используйте другой email.",
             variant: "destructive",
           });
         }
       }
     } catch (error) {
+      console.error('Ошибка аутентификации:', error);
       toast({
         title: "Произошла ошибка",
-        description: "Попробуйте еще раз.",
+        description: "Попробуйте еще раз или обратитесь к администратору.",
         variant: "destructive",
       });
     } finally {
@@ -83,25 +85,26 @@ const AuthPage = () => {
       return;
     }
 
-    const users = getUsers();
-    const user = users.find(u => u.email === formData.email);
+    const user = getUserByEmail(formData.email);
     
     if (user) {
-      // В реальном приложении здесь бы отправлялось письмо
-      toast({
-        title: "Ваш пароль найден!",
-        description: `Пароль для ${formData.email}: Используйте тот же пароль, что вводили при регистрации.`,
-      });
-      
-      console.log('Все зарегистрированные пользователи:', users.map(u => ({
-        email: u.email,
-        name: u.name,
-        id: u.id
-      })));
+      // В реальном приложении здесь бы отправлялось письмо с временной ссылкой
+      // Для демонстрации показываем напоминание о тестовом пользователе
+      if (formData.email === 'germannm@vk.com') {
+        toast({
+          title: "Напоминание пароля",
+          description: "Для тестового аккаунта используйте пароль: Germ@nnM3",
+        });
+      } else {
+        toast({
+          title: "Письмо отправлено",
+          description: "Проверьте почту. Мы отправили инструкции по восстановлению пароля.",
+        });
+      }
     } else {
       toast({
         title: "Пользователь не найден",
-        description: "Пользователь с таким email не зарегистрирован.",
+        description: "Пользователь с таким email не зарегистрирован. Попробуйте зарегистрироваться.",
         variant: "destructive",
       });
     }
