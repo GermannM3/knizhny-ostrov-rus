@@ -44,6 +44,30 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
+  // Инициализируем синхронизацию для Telegram WebApp
+  useEffect(() => {
+    if (isReady && isTelegramApp) {
+      const initSync = async () => {
+        try {
+          // Импортируем синхронизацию динамически
+          const { useTelegramSync } = await import('@/utils/telegramSync');
+          const sync = new (await import('@/utils/telegramSync')).TelegramStorageSync(
+            (await import('@/hooks/useTelegram')).useTelegram()
+          );
+          
+          // Выполняем автоматическую синхронизацию
+          await sync.autoSync();
+          console.log('Синхронизация с Telegram Cloud Storage завершена');
+        } catch (error) {
+          console.error('Ошибка синхронизации:', error);
+        }
+      };
+      
+      // Запускаем синхронизацию через небольшую задержку
+      setTimeout(initSync, 1000);
+    }
+  }, [isReady, isTelegramApp]);
+
   if (!isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center">

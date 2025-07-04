@@ -1,16 +1,18 @@
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTelegram } from '@/hooks/useTelegram';
 import { Button } from '@/components/ui/button';
 import { Book, Heart, Plus, LogOut, Menu, X, BookOpen, User } from 'lucide-react';
+import { useTelegramSync } from '@/utils/telegramSync';
 
 const Navigation = () => {
   const { user, logout } = useAuth();
   const { isTelegramApp, user: tgUser } = useTelegram();
+  const { isReady: syncReady, autoSync } = useTelegramSync();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const navItems = [
     { path: '/library', label: 'Библиотека', icon: BookOpen },
@@ -22,6 +24,20 @@ const Navigation = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  const handleSync = async () => {
+    if (!syncReady) return;
+    
+    setSyncing(true);
+    try {
+      await autoSync();
+      console.log('Ручная синхронизация завершена');
+    } catch (error) {
+      console.error('Ошибка ручной синхронизации:', error);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   return (
     <nav className="glass-card m-4 p-4 sticky top-4 z-50">
       <div className="flex items-center justify-between">
@@ -30,9 +46,21 @@ const Navigation = () => {
           <span className="text-xl font-bold gradient-text">
             BookCraft
             {isTelegramApp && (
-              <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full ml-2">
-                Telegram
-              </span>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full ml-2">
+                  Telegram
+                </span>
+                {syncReady && (
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded-full hover:bg-green-600 disabled:opacity-50"
+                    title="Синхронизировать данные"
+                  >
+                    {syncing ? '⟳' : '↻'}
+                  </button>
+                )}
+              </div>
             )}
           </span>
         </Link>
