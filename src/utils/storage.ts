@@ -5,7 +5,9 @@ const STORAGE_KEYS = {
   BOOKS: 'bookplatform_books',
   CHAPTERS: 'bookplatform_chapters',
   CURRENT_USER: 'bookplatform_current_user',
-  PURCHASES: 'bookplatform_purchases'
+  PURCHASES: 'bookplatform_purchases',
+  READING_PROGRESS: 'bookplatform_reading_progress',
+  FAVORITES: 'bookplatform_favorites'
 };
 
 // Исправленное стабильное хеширование пароля
@@ -106,6 +108,18 @@ const ensureTestUserAndBooks = () => {
   localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
   console.log('Тестовый пользователь сохранен с хешем пароля:', correctHash);
   return testUser;
+};
+
+// Обновление пользователя
+export const updateUser = (userId: string, updates: Partial<User>): User | null => {
+  const users = getUsers();
+  const index = users.findIndex(user => user.id === userId);
+  if (index !== -1) {
+    users[index] = { ...users[index], ...updates };
+    localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    return users[index];
+  }
+  return null;
 };
 
 // Пользователи
@@ -309,6 +323,166 @@ export const deleteChapter = (chapterId: string): boolean => {
     return true;
   }
   return false;
+};
+
+// Прогресс чтения
+export const saveReadingProgress = (progress: Omit<ReadingProgress, 'id' | 'lastReadAt'>): ReadingProgress => {
+  const progressList = getReadingProgress();
+  
+  // Проверяем, есть ли уже прогресс для этой книги и пользователя
+  const existingIndex = progressList.findIndex(p => p.userId === progress.userId && p.bookId === progress.bookId);
+  
+  if (existingIndex !== -1) {
+    // Обновляем существующий прогресс
+    progressList[existingIndex] = {
+      ...progressList[existingIndex],
+      ...progress,
+      lastReadAt: new Date()
+    };
+    localStorage.setItem(STORAGE_KEYS.READING_PROGRESS, JSON.stringify(progressList));
+    return progressList[existingIndex];
+  } else {
+    // Создаем новый прогресс
+    const newProgress: ReadingProgress = {
+      ...progress,
+      id: Date.now().toString(),
+      lastReadAt: new Date()
+    };
+    progressList.push(newProgress);
+    localStorage.setItem(STORAGE_KEYS.READING_PROGRESS, JSON.stringify(progressList));
+    return newProgress;
+  }
+};
+
+export const getReadingProgress = (): ReadingProgress[] => {
+  const progress = localStorage.getItem(STORAGE_KEYS.READING_PROGRESS);
+  return progress ? JSON.parse(progress) : [];
+};
+
+export const getUserReadingProgress = (userId: string, bookId: string): ReadingProgress | null => {
+  const progressList = getReadingProgress();
+  return progressList.find(p => p.userId === userId && p.bookId === bookId) || null;
+};
+
+// Избранное
+export const addToFavorites = (userId: string, bookId: string): Favorite => {
+  const favorites = getFavorites();
+  
+  // Проверяем, не добавлена ли уже книга в избранное
+  const existing = favorites.find(f => f.userId === userId && f.bookId === bookId);
+  if (existing) {
+    throw new Error('Книга уже в избранном');
+  }
+  
+  const newFavorite: Favorite = {
+    id: Date.now().toString(),
+    userId,
+    bookId,
+    addedAt: new Date()
+  };
+  
+  favorites.push(newFavorite);
+  localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(favorites));
+  return newFavorite;
+};
+
+export const removeFromFavorites = (userId: string, bookId: string): boolean => {
+  const favorites = getFavorites();
+  const filteredFavorites = favorites.filter(f => !(f.userId === userId && f.bookId === bookId));
+  
+  if (filteredFavorites.length !== favorites.length) {
+    localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(filteredFavorites));
+    return true;
+  }
+  return false;
+};
+
+export const getFavorites = (): Favorite[] => {
+  const favorites = localStorage.getItem(STORAGE_KEYS.FAVORITES);
+  return favorites ? JSON.parse(favorites) : [];
+};
+
+export const isFavorite = (userId: string, bookId: string): boolean => {
+  const favorites = getFavorites();
+  return favorites.some(f => f.userId === userId && f.bookId === bookId);
+};
+
+export const getUserFavorites = (userId: string): Book[] => {
+  const favorites = getFavorites().filter(f => f.userId === userId);
+  const books = getBooks();
+  
+  // Добавляем внешние книги
+  const externalBooks: Book[] = [
+    {
+      id: 'ext-1',
+      title: 'Война и мир',
+      description: 'Классический роман Льва Толстого о войне 1812 года и судьбах русского дворянства.',
+      genre: 'Классическая литература',
+      status: 'published',
+      coverImage: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop',
+      authorId: 'tolstoy',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 15420,
+      isFavorite: false,
+      source: 'external',
+      format: 'pdf',
+      price: 299
+    },
+    {
+      id: 'ext-2',
+      title: 'Преступление и наказание',
+      description: 'Психологический роман Достоевского о моральном конфликте молодого студента.',
+      genre: 'Классическая литература',
+      status: 'published',
+      coverImage: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop',
+      authorId: 'dostoevsky',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 12350,
+      isFavorite: false,
+      source: 'external',
+      format: 'epub',
+      price: 249
+    },
+    {
+      id: 'ext-3',
+      title: 'Мастер и Маргарита',
+      description: 'Мистический роман Булгакова, переплетающий современность и библейские мотивы.',
+      genre: 'Мистика',
+      status: 'published',
+      coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+      authorId: 'bulgakov',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 18900,
+      isFavorite: false,
+      source: 'external',
+      format: 'pdf',
+      price: 399
+    },
+    {
+      id: 'ext-4',
+      title: 'Анна Каренина',
+      description: 'Роман о любви, страсти и трагических последствиях нарушения общественных норм.',
+      genre: 'Классическая литература',
+      status: 'published',
+      coverImage: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop',
+      authorId: 'tolstoy',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 9870,
+      isFavorite: false,
+      source: 'external',
+      format: 'epub',
+      price: 279
+    }
+  ];
+  
+  const allBooks = [...books, ...externalBooks];
+  const favoriteBookIds = favorites.map(f => f.bookId);
+  
+  return allBooks.filter(book => favoriteBookIds.includes(book.id));
 };
 
 // Покупки

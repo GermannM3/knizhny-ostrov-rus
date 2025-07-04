@@ -5,13 +5,15 @@ import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingBag, BookOpen, Download, Eye } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ShoppingBag, BookOpen, Download, Eye, Play } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { getPurchasedBooks } from '@/utils/storage';
+import { getPurchasedBooks, getUserReadingProgress } from '@/utils/storage';
 import { useToast } from '@/hooks/use-toast';
 
 const PurchasedBooksPage = () => {
   const [purchasedBooks, setPurchasedBooks] = useState<Book[]>([]);
+  const [readingProgress, setReadingProgress] = useState<{ [key: string]: number }>({});
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
@@ -19,11 +21,18 @@ const PurchasedBooksPage = () => {
     if (user) {
       const books = getPurchasedBooks(user.id);
       setPurchasedBooks(books);
+      
+      // Загружаем прогресс чтения для каждой книги
+      const progressMap: { [key: string]: number } = {};
+      books.forEach(book => {
+        const progress = getUserReadingProgress(user.id, book.id);
+        progressMap[book.id] = progress?.progress || 0;
+      });
+      setReadingProgress(progressMap);
     }
   }, [user]);
 
   const handleDownload = (book: Book) => {
-    // Эмулируем скачивание файла
     toast({
       title: "Скачивание начато",
       description: `Скачивание книги "${book.title}" (${book.format?.toUpperCase()}) начато`,
@@ -38,6 +47,10 @@ const PurchasedBooksPage = () => {
 
   const handleRead = (book: Book) => {
     window.open(`/read/${book.id}`, '_blank');
+  };
+
+  const handleContinueReading = (book: Book) => {
+    window.location.href = `/read/${book.id}`;
   };
 
   if (!isAuthenticated) {
@@ -96,62 +109,86 @@ const PurchasedBooksPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {purchasedBooks.map((book) => (
-              <Card key={book.id} className="book-card group">
-                <div className="relative">
-                  <img
-                    src={book.coverImage}
-                    alt={book.title}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
-                  />
-                  <Badge className="absolute top-2 right-2 bg-green-500/20 text-green-400 border-green-500/50">
-                    Куплена
-                  </Badge>
-                  <Badge className="absolute top-2 left-2 bg-blue-500/20 text-blue-400 border-blue-500/50">
-                    {book.format?.toUpperCase()}
-                  </Badge>
-                </div>
+            {purchasedBooks.map((book) => {
+              const progress = readingProgress[book.id] || 0;
+              const hasStartedReading = progress > 0;
+              
+              return (
+                <Card key={book.id} className="book-card group">
+                  <div className="relative">
+                    <img
+                      src={book.coverImage}
+                      alt={book.title}
+                      className="w-full h-48 object-cover rounded-lg mb-4"
+                    />
+                    <Badge className="absolute top-2 right-2 bg-green-500/20 text-green-400 border-green-500/50">
+                      Куплена
+                    </Badge>
+                    <Badge className="absolute top-2 left-2 bg-blue-500/20 text-blue-400 border-blue-500/50">
+                      {book.format?.toUpperCase()}
+                    </Badge>
+                  </div>
 
-                <div className="space-y-2">
-                  <h3 className="font-bold text-lg text-gray-800 dark:text-white line-clamp-2">
-                    {book.title}
-                  </h3>
-                  
-                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-                    {book.description}
-                  </p>
-                  
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>{book.genre}</span>
-                    <div className="flex items-center space-x-1">
-                      <Eye className="h-3 w-3" />
-                      <span>{book.views}</span>
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-lg text-gray-800 dark:text-white line-clamp-2">
+                      {book.title}
+                    </h3>
+                    
+                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                      {book.description}
+                    </p>
+                    
+                    {hasStartedReading && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-gray-500">Прогресс чтения</span>
+                          <span className="text-amber-400 font-medium">{progress}%</span>
+                        </div>
+                        <Progress value={progress} className="h-2" />
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>{book.genre}</span>
+                      <div className="flex items-center space-x-1">
+                        <Eye className="h-3 w-3" />
+                        <span>{book.views}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      {hasStartedReading ? (
+                        <Button 
+                          onClick={() => handleContinueReading(book)}
+                          className="w-full bg-green-500 hover:bg-green-600 text-white"
+                        >
+                          <Play className="h-4 w-4 mr-2" />
+                          Продолжить чтение
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={() => handleRead(book)}
+                          className="w-full bg-amber-500 hover:bg-amber-600 text-black"
+                        >
+                          <BookOpen className="h-4 w-4 mr-2" />
+                          Начать чтение
+                        </Button>
+                      )}
+                      
+                      <Button 
+                        onClick={() => handleDownload(book)}
+                        variant="outline" 
+                        size="sm"
+                        className="w-full"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Скачать {book.format?.toUpperCase()}
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="flex items-center space-x-2 pt-2">
-                    <Button 
-                      onClick={() => handleRead(book)}
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                    >
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Читать
-                    </Button>
-                    
-                    <Button 
-                      onClick={() => handleDownload(book)}
-                      variant="outline" 
-                      size="sm"
-                      title="Скачать"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>

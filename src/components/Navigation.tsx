@@ -2,240 +2,303 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useTelegram } from '@/hooks/useTelegram';
-import { Button } from '@/components/ui/button';
-import { Book, Heart, Plus, LogOut, Menu, X, BookOpen, User, RefreshCw } from 'lucide-react';
 import { useTelegramSync } from '@/utils/telegramSync';
+import { Button } from '@/components/ui/button';
+import { 
+  BookOpen, 
+  User, 
+  LogOut, 
+  Menu, 
+  X, 
+  Search, 
+  ShoppingBag, 
+  Heart,
+  PenTool,
+  RefreshCw,
+  Library
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Navigation = () => {
-  const { user, logout } = useAuth();
-  const { isTelegramApp, user: tgUser } = useTelegram();
-  const { isReady: syncReady, sync, syncToCloud, loadFromCloud } = useTelegramSync();
-  const { toast } = useToast();
+  const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const { toast } = useToast();
+  
+  const { syncToCloud, sync, isReady, isTelegramApp } = useTelegramSync();
 
-  const navItems = [
-    { path: '/library', label: 'Библиотека', icon: BookOpen },
-    { path: '/find-books', label: 'Найти книги', icon: BookOpen },
-    { path: '/purchased-books', label: 'Купленные книги', icon: Heart },
-    { path: '/dashboard', label: 'Мои книги', icon: Book },
-    { path: '/create', label: 'Создать книгу', icon: Plus },
-    { path: '/favorites', label: 'Избранное', icon: Heart },
-    { path: '/profile', label: 'Профиль', icon: User },
-  ];
-
-  const isActive = (path: string) => location.pathname === path;
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+  };
 
   const handleSync = async () => {
-    if (syncing) return;
+    if (isSyncing) return;
     
-    setSyncing(true);
+    setIsSyncing(true);
+    
     try {
-      console.log('🔄 Запускаем синхронизацию...');
+      let result;
       
       if (isTelegramApp) {
-        // В Telegram WebApp: загружаем данные из облака и синхронизируем обратно
-        console.log('📱 Telegram WebApp: полная синхронизация');
-        const result = await sync();
+        // В Telegram WebApp выполняем полную синхронизацию
+        console.log('🔄 Выполняем полную синхронизацию в Telegram WebApp');
+        result = await sync();
         
         if (result) {
-          console.log('✅ Синхронизация в Telegram WebApp успешна');
           toast({
-            title: "Синхронизация выполнена",
-            description: "Данные успешно синхронизированы с облаком",
+            title: "Синхронизация завершена",
+            description: "Данные успешно синхронизированы с облаком Telegram",
           });
-          // Обновляем страницу для отображения синхронизированных данных
-          setTimeout(() => window.location.reload(), 500);
+          
+          // Перезагружаем страницу для отображения обновленных данных
+          setTimeout(() => window.location.reload(), 1000);
         } else {
-          console.log('⚠️ Синхронизация в Telegram WebApp с предупреждениями');
           toast({
-            title: "Синхронизация частично выполнена",
-            description: "Некоторые данные могли не синхронизироваться",
-            variant: "destructive",
+            title: "Ошибка синхронизации",
+            description: "Не удалось синхронизировать все данные",
+            variant: "destructive"
           });
         }
       } else {
-        // В веб-версии: отправляем данные в облако
-        console.log('🌐 Веб-версия: отправляем данные в облако');
-        if (syncReady) {
-          const result = await syncToCloud();
-          
-          if (result) {
-            console.log('✅ Отправка данных в облако успешна');
-            toast({
-              title: "Данные отправлены в облако",
-              description: "Ваши изменения синхронизированы с Telegram",
-            });
-          } else {
-            console.log('⚠️ Отправка данных в облако с ошибками');
-            toast({
-              title: "Ошибка синхронизации",
-              description: "Не удалось отправить данные в облако",
-              variant: "destructive",
-            });
-          }
+        // В веб-версии отправляем данные в облако
+        console.log('📤 Отправляем данные из веб-версии в облако');
+        result = await syncToCloud();
+        
+        if (result) {
+          toast({
+            title: "Данные отправлены",
+            description: "Ваши данные сохранены в облаке Telegram",
+          });
         } else {
           toast({
-            title: "Синхронизация недоступна",
-            description: "Telegram Cloud Storage недоступен",
-            variant: "destructive",
+            title: "Ошибка отправки",
+            description: "Не удалось отправить данные в облако",
+            variant: "destructive"
           });
         }
       }
-      
     } catch (error) {
-      console.error('❌ Ошибка синхронизации:', error);
+      console.error('Ошибка синхронизации:', error);
       toast({
         title: "Ошибка синхронизации",
-        description: "Произошла ошибка при синхронизации данных",
-        variant: "destructive",
+        description: "Произошла неожиданная ошибка",
+        variant: "destructive"
       });
     } finally {
-      setSyncing(false);
+      setIsSyncing(false);
     }
   };
 
-  // Показываем кнопку синхронизации если есть Telegram WebApp или если это веб-версия с доступом к Cloud Storage
-  const showSyncButton = isTelegramApp || syncReady;
+  const navItems = [
+    { 
+      path: '/library', 
+      label: 'Библиотека', 
+      icon: Library,
+      public: true 
+    },
+    { 
+      path: '/find-books', 
+      label: 'Найти книгу', 
+      icon: Search,
+      public: true 
+    },
+    ...(isAuthenticated ? [
+      { 
+        path: '/purchased-books', 
+        label: 'Купленные', 
+        icon: ShoppingBag,
+        public: false 
+      },
+      { 
+        path: '/favorites', 
+        label: 'Избранное', 
+        icon: Heart,
+        public: false 
+      },
+      { 
+        path: '/dashboard', 
+        label: 'Мои публикации', 
+        icon: PenTool,
+        public: false 
+      },
+      { 
+        path: '/profile', 
+        label: 'Профиль', 
+        icon: User,
+        public: false 
+      }
+    ] : [])
+  ];
 
   return (
-    <nav className="glass-card m-4 p-4 sticky top-4 z-50">
-      <div className="flex items-center justify-between">
-        <Link to="/library" className="flex items-center space-x-2">
-          <Book className="h-8 w-8 text-amber-400" />
-          <div className="flex items-center">
-            <span className="text-xl font-bold gradient-text">BookCraft</span>
-            {isTelegramApp && (
-              <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full ml-2">
-                Telegram
-              </span>
-            )}
-          </div>
-        </Link>
+    <nav className="glass-card sticky top-0 z-50 border-b border-white/20">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Логотип */}
+          <Link 
+            to="/library" 
+            className="flex items-center space-x-2 text-white hover:text-amber-400 transition-colors"
+          >
+            <BookOpen className="h-8 w-8 text-amber-400" />
+            <span className="font-bold text-xl">Книжный остров</span>
+          </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-6">
-          {navItems.map(({ path, label, icon: Icon }) => (
-            <Link
-              key={path}
-              to={path}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 ${
-                isActive(path)
-                  ? 'bg-amber-500/20 text-amber-400'
-                  : 'text-gray-300 hover:text-amber-400 hover:bg-white/10'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{label}</span>
-            </Link>
-          ))}
-          
-          {user && (
-            <>
-              <div className="flex items-center space-x-2 text-gray-300">
-                <span>{user.name}</span>
-                {isTelegramApp && tgUser && (
-                  <span className="text-xs text-blue-400">(@{tgUser.username || tgUser.first_name})</span>
-                )}
-              </div>
+          {/* Десктопная навигация */}
+          <div className="hidden md:flex items-center space-x-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
               
-              {showSyncButton && (
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-amber-500/20 text-amber-400'
+                      : 'text-gray-300 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Кнопки действий */}
+          <div className="hidden md:flex items-center space-x-4">
+            {/* Кнопка синхронизации */}
+            {isReady && (
+              <Button
+                onClick={handleSync}
+                disabled={isSyncing}
+                variant="outline"
+                size="sm"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? 'Синхронизация...' : 'Синхронизация'}
+              </Button>
+            )}
+
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-300">
+                  Привет, {user?.name}!
+                </span>
                 <Button
-                  onClick={handleSync}
-                  disabled={syncing}
+                  onClick={handleLogout}
                   variant="outline"
                   size="sm"
-                  className="text-green-400 border-green-500/50 hover:bg-green-500/20"
-                  title={isTelegramApp ? "Синхронизировать с веб-версией" : "Отправить данные в Telegram"}
+                  className="border-white/20 text-white hover:bg-white/10"
                 >
-                  <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Выход
                 </Button>
-              )}
-              
-              <Button 
-                onClick={logout}
-                variant="ghost" 
-                size="sm"
-                className="text-gray-300 hover:text-red-400"
-                title="Выход"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </>
-          )}
+              </div>
+            ) : (
+              <Link to="/auth">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Войти
+                </Button>
+              </Link>
+            )}
+          </div>
+
+          {/* Мобильное меню кнопка */}
+          <Button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            variant="ghost"
+            size="sm"
+            className="md:hidden text-white hover:bg-white/10"
+          >
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
         </div>
 
-        {/* Mobile Menu Button */}
-        <Button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          variant="ghost"
-          size="sm"
-          className="md:hidden text-white"
-        >
-          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </Button>
-      </div>
-
-      {/* Mobile Navigation */}
-      {mobileMenuOpen && (
-        <div className="md:hidden mt-4 space-y-2">
-          {navItems.map(({ path, label, icon: Icon }) => (
-            <Link
-              key={path}
-              to={path}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-all duration-200 w-full ${
-                isActive(path)
-                  ? 'bg-amber-500/20 text-amber-400'
-                  : 'text-gray-300 hover:text-amber-400 hover:bg-white/10'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              <span>{label}</span>
-            </Link>
-          ))}
-          
-          {user && (
-            <div className="flex items-center justify-between pt-2 border-t border-white/20">
-              <div className="flex flex-col space-y-1 text-gray-300">
-                <span>{user.name}</span>
-                {isTelegramApp && tgUser && (
-                  <span className="text-xs text-blue-400">(@{tgUser.username || tgUser.first_name})</span>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                {showSyncButton && (
+        {/* Мобильная навигация */}
+        {isMenuOpen && (
+          <div className="md:hidden py-4 border-t border-white/20">
+            <div className="space-y-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-amber-500/20 text-amber-400'
+                        : 'text-gray-300 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+              
+              <div className="pt-4 mt-4 border-t border-white/20">
+                {/* Кнопка синхронизации */}
+                {isReady && (
                   <Button
-                    onClick={handleSync}
-                    disabled={syncing}
+                    onClick={() => {
+                      handleSync();
+                      setIsMenuOpen(false);
+                    }}
+                    disabled={isSyncing}
                     variant="outline"
                     size="sm"
-                    className="text-green-400 border-green-500/50"
-                    title={isTelegramApp ? "Синхронизировать" : "Отправить в Telegram"}
+                    className="border-white/20 text-white hover:bg-white/10 w-full mb-2"
                   >
-                    <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? 'Синхронизация...' : 'Синхронизация'}
                   </Button>
                 )}
-                <Button 
-                  onClick={() => {
-                    logout();
-                    setMobileMenuOpen(false);
-                  }}
-                  variant="ghost" 
-                  size="sm"
-                  className="text-gray-300 hover:text-red-400"
-                  title="Выход"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
+
+                {isAuthenticated ? (
+                  <div className="space-y-2">
+                    <div className="text-sm text-gray-300 px-3">
+                      Привет, {user?.name}!
+                    </div>
+                    <Button
+                      onClick={handleLogout}
+                      variant="outline"
+                      size="sm"
+                      className="border-white/20 text-white hover:bg-white/10 w-full"
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Выход
+                    </Button>
+                  </div>
+                ) : (
+                  <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-white/20 text-white hover:bg-white/10 w-full"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Войти
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </nav>
   );
 };

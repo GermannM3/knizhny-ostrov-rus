@@ -19,9 +19,9 @@ export interface Book {
   updatedAt: Date;
   views: number;
   isFavorite: boolean;
-  source?: 'internal' | 'external'; // Добавляем источник книги
-  format?: 'pdf' | 'epub' | 'bookcraft'; // Добавляем формат
-  price?: number; // Цена для внешних книг
+  source?: 'internal' | 'external';
+  format?: 'pdf' | 'epub' | 'bookcraft';
+  price?: number;
 }
 
 export interface Chapter {
@@ -39,11 +39,29 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
-// Новый тип для покупок
 export interface Purchase {
   id: string;
   userId: string;
   bookId: string;
   purchaseDate: Date;
   paid: boolean;
+}
+
+// Новый тип для прогресса чтения
+export interface ReadingProgress {
+  id: string;
+  userId: string;
+  bookId: string;
+  currentChapter: number;
+  totalChapters: number;
+  lastReadAt: Date;
+  progress: number; // Процент прочтения (0-100)
+}
+
+// Новый тип для избранного
+export interface Favorite {
+  id: string;
+  userId: string;
+  bookId: string;
+  addedAt: Date;
 }

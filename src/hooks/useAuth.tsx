@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User } from '@/types';
 import { getCurrentUser, loginUser, logoutUser, saveUser } from '@/utils/storage';
@@ -9,9 +8,24 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
+  updateAuthUser: (updatedUser: User) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<{
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string, name: string) => Promise<boolean>;
+  logout: () => void;
+  updateAuthUser: (updatedUser: User) => void;
+}>({
+  user: null,
+  isAuthenticated: false,
+  login: async () => false,
+  register: async () => false,
+  logout: () => {},
+  updateAuthUser: () => {}
+});
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -20,11 +34,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const currentUser = getCurrentUser();
     if (currentUser) {
-      console.log('Найден сохраненный пользователь:', currentUser.email);
       setUser(currentUser);
       setIsAuthenticated(true);
-    } else {
-      console.log('Сохраненный пользователь не найден');
     }
   }, []);
 
@@ -62,14 +73,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = () => {
-    console.log('Выход из системы');
     logoutUser();
     setUser(null);
     setIsAuthenticated(false);
   };
 
+  const updateAuthUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, register, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
+      login,
+      register,
+      logout,
+      updateAuthUser
+    }}>
       {children}
     </AuthContext.Provider>
   );

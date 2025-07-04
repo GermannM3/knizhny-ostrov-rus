@@ -1,37 +1,166 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getBooks, getBookChapters, updateBook } from '@/utils/storage';
+import { getBooks, getBookChapters, updateBook, saveReadingProgress, getUserReadingProgress, addToFavorites, removeFromFavorites, isFavorite } from '@/utils/storage';
 import { Book, Chapter } from '@/types';
 import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Sun, Moon } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Sun, Moon, Heart, BookOpen } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 const ReadBook = () => {
   const { id } = useParams();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [book, setBook] = useState<Book | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [currentChapter, setCurrentChapter] = useState(0);
   const [fontSize, setFontSize] = useState(16);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [isBookFavorite, setIsBookFavorite] = useState(false);
 
   useEffect(() => {
     if (id) {
       const books = getBooks();
-      const foundBook = books.find(b => b.id === id && b.status === 'published');
+      let foundBook = books.find(b => b.id === id && b.status === 'published');
+      
+      // Если не найдена среди внутренних, ищем среди внешних
+      if (!foundBook) {
+        const externalBooks: Book[] = [
+          {
+            id: 'ext-1',
+            title: 'Война и мир',
+            description: 'Классический роман Льва Толстого о войне 1812 года и судьбах русского дворянства.',
+            genre: 'Классическая литература',
+            status: 'published',
+            coverImage: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop',
+            authorId: 'tolstoy',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            views: 15420,
+            isFavorite: false,
+            source: 'external',
+            format: 'pdf',
+            price: 299
+          },
+          {
+            id: 'ext-2',
+            title: 'Преступление и наказание',
+            description: 'Психологический роман Достоевского о моральном конфликте молодого студента.',
+            genre: 'Классическая литература',
+            status: 'published',
+            coverImage: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop',
+            authorId: 'dostoevsky',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            views: 12350,
+            isFavorite: false,
+            source: 'external',
+            format: 'epub',
+            price: 249
+          },
+          {
+            id: 'ext-3',
+            title: 'Мастер и Маргарита',
+            description: 'Мистический роман Булгакова, переплетающий современность и библейские мотивы.',
+            genre: 'Мистика',
+            status: 'published',
+            coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+            authorId: 'bulgakov',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            views: 18900,
+            isFavorite: false,
+            source: 'external',
+            format: 'pdf',
+            price: 399
+          },
+          {
+            id: 'ext-4',
+            title: 'Анна Каренина',
+            description: 'Роман о любви, страсти и трагических последствиям нарушения общественных норм.',
+            genre: 'Классическая литература',
+            status: 'published',
+            coverImage: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop',
+            authorId: 'tolstoy',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            views: 9870,
+            isFavorite: false,
+            source: 'external',
+            format: 'epub',
+            price: 279
+          }
+        ];
+        foundBook = externalBooks.find(b => b.id === id);
+      }
       
       if (foundBook) {
         setBook(foundBook);
         
-        // Увеличиваем счетчик просмотров
-        updateBook(foundBook.id, { views: foundBook.views + 1 });
+        // Увеличиваем счетчик просмотров только для внутренних книг
+        if (foundBook.source !== 'external') {
+          updateBook(foundBook.id, { views: foundBook.views + 1 });
+        }
         
-        const bookChapters = getBookChapters(id);
-        setChapters(bookChapters);
+        // Загружаем главы или создаем фиктивные для внешних книг
+        if (foundBook.source === 'external') {
+          const mockChapters: Chapter[] = [
+            {
+              id: `${id}-chapter-1`,
+              bookId: id,
+              title: 'Глава 1',
+              content: `Это первая глава книги "${foundBook.title}". \n\nВ данной версии представлена демонстрационная глава для показа функциональности чтения. \n\nВ полной версии здесь будет настоящий текст книги со всеми главами и содержанием.`,
+              chapterNumber: 1,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            },
+            {
+              id: `${id}-chapter-2`,
+              bookId: id,
+              title: 'Глава 2',
+              content: `Это вторая глава книги "${foundBook.title}". \n\nДемонстрационный контент для показа навигации между главами. \n\nВ реальной версии здесь будет полный текст всех глав книги.`,
+              chapterNumber: 2,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            }
+          ];
+          setChapters(mockChapters);
+        } else {
+          const bookChapters = getBookChapters(id);
+          setChapters(bookChapters);
+        }
+        
+        // Загружаем прогресс чтения
+        if (user) {
+          const progress = getUserReadingProgress(user.id, id);
+          if (progress) {
+            setCurrentChapter(progress.currentChapter);
+          }
+          
+          // Проверяем, в избранном ли книга
+          setIsBookFavorite(isFavorite(user.id, id));
+        }
       }
     }
-  }, [id]);
+  }, [id, user]);
+
+  // Сохраняем прогресс при смене главы
+  useEffect(() => {
+    if (user && book && chapters.length > 0) {
+      const progress = Math.round(((currentChapter + 1) / chapters.length) * 100);
+      saveReadingProgress({
+        userId: user.id,
+        bookId: book.id,
+        currentChapter,
+        totalChapters: chapters.length,
+        progress
+      });
+    }
+  }, [currentChapter, user, book, chapters]);
 
   const nextChapter = () => {
     if (currentChapter < chapters.length - 1) {
@@ -57,6 +186,34 @@ const ReadBook = () => {
     }
   };
 
+  const handleToggleFavorite = () => {
+    if (!user || !book) return;
+
+    try {
+      if (isBookFavorite) {
+        removeFromFavorites(user.id, book.id);
+        setIsBookFavorite(false);
+        toast({
+          title: "Удалено из избранного",
+          description: `Книга "${book.title}" удалена из избранного`,
+        });
+      } else {
+        addToFavorites(user.id, book.id);
+        setIsBookFavorite(true);
+        toast({
+          title: "Добавлено в избранное",
+          description: `Книга "${book.title}" добавлена в избранное`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить избранное",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (!book) {
     return (
       <div className="min-h-screen">
@@ -65,8 +222,8 @@ const ReadBook = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white">Книга не найдена</h1>
             <p className="text-gray-300 mt-2">Возможно, книга еще не опубликована или была удалена.</p>
-            <Link to="/dashboard">
-              <Button className="mt-4">Вернуться к книгам</Button>
+            <Link to="/library">
+              <Button className="mt-4">Вернуться в библиотеку</Button>
             </Link>
           </div>
         </div>
@@ -81,8 +238,8 @@ const ReadBook = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white">В книге пока нет глав</h1>
-            <Link to="/dashboard">
-              <Button className="mt-4">Вернуться к книгам</Button>
+            <Link to="/library">
+              <Button className="mt-4">Вернуться в библиотеку</Button>
             </Link>
           </div>
         </div>
@@ -91,6 +248,7 @@ const ReadBook = () => {
   }
 
   const currentChapterData = chapters[currentChapter];
+  const readingProgress = Math.round(((currentChapter + 1) / chapters.length) * 100);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
@@ -103,9 +261,9 @@ const ReadBook = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Заголовок и управление */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 space-y-4 md:space-y-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 space-y-4 md:space-y-0">
             <div className="flex items-center space-x-4">
-              <Link to="/dashboard">
+              <Link to="/library">
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -131,6 +289,23 @@ const ReadBook = () => {
             
             {/* Управление отображением */}
             <div className="flex items-center space-x-2">
+              {user && (
+                <Button
+                  onClick={handleToggleFavorite}
+                  variant="outline"
+                  size="sm"
+                  className={`${
+                    isBookFavorite
+                      ? 'bg-red-500/20 border-red-500 text-red-400 hover:bg-red-500/30'
+                      : isDarkTheme 
+                      ? 'border-white/20 text-white hover:bg-white/10' 
+                      : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <Heart className={`h-4 w-4 ${isBookFavorite ? 'fill-current' : ''}`} />
+                </Button>
+              )}
+              
               <Button
                 onClick={decreaseFontSize}
                 variant="outline"
@@ -174,6 +349,19 @@ const ReadBook = () => {
                 {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
             </div>
+          </div>
+
+          {/* Прогресс чтения */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className={`text-sm ${isDarkTheme ? 'text-gray-300' : 'text-gray-600'}`}>
+                Прогресс чтения
+              </span>
+              <span className={`text-sm font-medium ${isDarkTheme ? 'text-white' : 'text-gray-900'}`}>
+                {readingProgress}%
+              </span>
+            </div>
+            <Progress value={readingProgress} className="h-2" />
           </div>
 
           {/* Книжная страница */}

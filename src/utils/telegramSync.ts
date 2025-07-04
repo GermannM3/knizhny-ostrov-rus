@@ -7,7 +7,9 @@ const SYNC_KEYS = [
   'bookplatform_books', 
   'bookplatform_chapters',
   'bookplatform_current_user',
-  'bookplatform_purchases'
+  'bookplatform_purchases',
+  'bookplatform_reading_progress',
+  'bookplatform_favorites'
 ];
 
 // Улучшенный RPC-подобный синхронизатор
