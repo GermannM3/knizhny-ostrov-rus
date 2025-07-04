@@ -19,6 +19,7 @@ import FindBooksPage from "./pages/FindBooksPage";
 import OtherAuthorsPage from "./pages/OtherAuthorsPage";
 import PurchasedBooksPage from "./pages/PurchasedBooksPage";
 import NotFound from "./pages/NotFound";
+import DiagnosticPanel from "./components/DiagnosticPanel";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -213,6 +214,7 @@ const App = () => (
         <TelegramWrapper>
           <AuthProvider>
             <AppRoutes />
+            <DiagnosticPanel />
           </AuthProvider>
         </TelegramWrapper>
       </BrowserRouter>
