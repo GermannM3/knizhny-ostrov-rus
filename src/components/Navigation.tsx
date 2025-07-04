@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useSync } from '@/hooks/useSync';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import SyncButton from '@/components/SyncButton';
 import { Button } from '@/components/ui/button';
 import { 
   BookOpen, 
@@ -13,7 +14,6 @@ import {
   ShoppingBag, 
   Heart,
   PenTool,
-  RefreshCw,
   Library
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -23,38 +23,11 @@ const Navigation = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { toast } = useToast();
-  
-  const { sync, isLoading, canSync, hasCloudStorage } = useSync();
+  const { isTelegramWebApp } = useTelegramWebApp();
 
   const handleLogout = () => {
     logout();
     setIsMenuOpen(false);
-  };
-
-  const handleSync = async () => {
-    if (isLoading) return;
-    
-    if (!canSync) {
-      toast({
-        title: "Синхронизация недоступна",
-        description: "Telegram ID не найден",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const result = await sync();
-    
-    toast({
-      title: result.success ? "Синхронизация завершена" : "Ошибка синхронизации",
-      description: result.message,
-      variant: result.success ? "default" : "destructive",
-    });
-
-    // Перезагружаем только если были реальные изменения
-    if (result.success && result.message.includes('Синхронизировано') && !result.message.includes('Нет изменений')) {
-      setTimeout(() => window.location.reload(), 1500);
-    }
   };
 
   const navItems = [
@@ -136,19 +109,8 @@ const Navigation = () => {
 
           {/* Кнопки действий */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Кнопка синхронизации */}
-            {canSync && (
-              <Button
-                onClick={handleSync}
-                disabled={isLoading}
-                variant="outline"
-                size="sm"
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                {isLoading ? 'Синхронизация...' : 'Синхронизация'}
-              </Button>
-            )}
+            {/* Кнопка синхронизации только в Telegram WebApp */}
+            {isTelegramWebApp && <SyncButton />}
 
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
@@ -216,21 +178,11 @@ const Navigation = () => {
               })}
               
               <div className="pt-4 mt-4 border-t border-white/20">
-                {/* Кнопка синхронизации */}
-                {canSync && (
-                  <Button
-                    onClick={() => {
-                      handleSync();
-                      setIsMenuOpen(false);
-                    }}
-                    disabled={isLoading}
-                    variant="outline"
-                    size="sm"
-                    className="border-white/20 text-white hover:bg-white/10 w-full mb-2"
-                  >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                    {isLoading ? 'Синхронизация...' : 'Синхронизация'}
-                  </Button>
+                {/* Кнопка синхронизации только в Telegram WebApp */}
+                {isTelegramWebApp && (
+                  <div onClick={() => setIsMenuOpen(false)}>
+                    <SyncButton />
+                  </div>
                 )}
 
                 {isAuthenticated ? (

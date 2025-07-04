@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SupabaseAuthProvider } from "@/hooks/useSupabaseAuth";
-import TelegramInitializer from "@/components/TelegramInitializer";
+import TelegramAuth from "@/components/TelegramAuth";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import CreateBook from "./pages/CreateBook";
@@ -32,7 +32,7 @@ function App() {
           <AuthProvider>
             <Toaster />
             <Sonner />
-            <TelegramInitializer />
+            <TelegramAuth />
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />

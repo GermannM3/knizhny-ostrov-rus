@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { saveBook } from '@/utils/storage';
 import { bookCovers, getRandomCover, genres, genreCovers } from '@/data/bookCovers';
 import Navigation from '@/components/Navigation';
@@ -16,6 +17,7 @@ import { toast } from '@/hooks/use-toast';
 const CreateBook = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isTelegramWebApp } = useTelegramWebApp();
   const [selectedCover, setSelectedCover] = useState(getRandomCover());
   const [formData, setFormData] = useState({
     title: '',
@@ -24,15 +26,14 @@ const CreateBook = () => {
     status: 'draft' as 'draft' | 'published'
   });
 
-  // Проверяем, запущено ли из Telegram WebApp
+  // Автоматически публикуем книги из Telegram WebApp
   useEffect(() => {
-    const isTelegramApp = window.Telegram?.WebApp;
-    if (isTelegramApp) {
+    if (isTelegramWebApp) {
       // Автоматически выставляем книгу как публичную при создании из Telegram
       setFormData(prev => ({ ...prev, status: 'published' }));
       console.log('📱 Создание книги из Telegram WebApp - автоматически публичная');
     }
-  }, []);
+  }, [isTelegramWebApp]);
 
   const handleGenreChange = (genre: string) => {
     setFormData({...formData, genre});
@@ -62,16 +63,15 @@ const CreateBook = () => {
       return;
     }
 
-    const isTelegramApp = window.Telegram?.WebApp;
     
     const newBook = saveBook({
       ...formData,
       coverImage: selectedCover,
       authorId: user.id,
-      is_public: isTelegramApp ? true : formData.status === 'published' // Автоматически публичная из Telegram
+      is_public: isTelegramWebApp ? true : formData.status === 'published' // Автоматически публичная из Telegram
     });
 
-    const message = isTelegramApp 
+    const message = isTelegramWebApp 
       ? "Книга создана и автоматически опубликована для сообщества Telegram!"
       : "Книга создана! Теперь вы можете добавить главы.";
 
@@ -84,13 +84,11 @@ const CreateBook = () => {
       id: newBook.id,
       title: newBook.title,
       is_public: newBook.is_public,
-      from_telegram: !!isTelegramApp
+      from_telegram: isTelegramWebApp
     });
 
     navigate(`/edit/${newBook.id}`);
   };
-
-  const isTelegramApp = window.Telegram?.WebApp;
 
   return (
     <div className="min-h-screen">
@@ -100,7 +98,7 @@ const CreateBook = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-white">Создать новую книгу</h1>
-            {isTelegramApp && (
+            {isTelegramWebApp && (
               <div className="glass-card px-4 py-2">
                 <p className="text-sm text-green-400">📱 Telegram WebApp</p>
                 <p className="text-xs text-gray-300">Книга будет опубликована автоматически</p>
@@ -221,7 +219,7 @@ const CreateBook = () => {
             <div className="glass-card p-6">
               <h2 className="text-xl font-semibold text-white mb-4">Настройки публикации</h2>
               
-              {isTelegramApp ? (
+              {isTelegramWebApp ? (
                 <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                   <p className="text-green-400 font-medium">📱 Режим Telegram WebApp</p>
                   <p className="text-sm text-gray-300 mt-1">

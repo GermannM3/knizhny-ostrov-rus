@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BookOpen, User, Mail, Lock, LogIn, UserPlus, Eye, EyeOff, Home } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { useTelegram } from '@/hooks/useTelegram';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 
 const AuthPage = () => {
   const [email, setEmail] = useState('');
@@ -20,7 +20,7 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   
   const { signIn, signUp, signInWithTelegram, isAuthenticated } = useSupabaseAuth();
-  const { user: telegramUser, isInTelegram } = useTelegram();
+  const { user: telegramUser, isTelegramWebApp } = useTelegramWebApp();
   const navigate = useNavigate();
 
   // Если пользователь уже авторизован, перенаправляем на дашборд
@@ -68,7 +68,7 @@ const AuthPage = () => {
   };
 
   const handleTelegramAuth = async () => {
-    const tgUser = telegramUser || window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const tgUser = telegramUser;
     
     if (!tgUser) {
       setError('Данные Telegram недоступны. Попробуйте обновить страницу.');
@@ -123,7 +123,7 @@ const AuthPage = () => {
           </CardHeader>
           <CardContent>
             {/* Telegram авторизация - показываем в Telegram WebApp */}
-            {isInTelegram && (
+            {isTelegramWebApp && (
               <div className="mb-6">
                 <Button
                   onClick={handleTelegramAuth}

@@ -1,12 +1,11 @@
 
-import { initTelegramBot } from './telegramBot';
+// Telegram bot initialization removed
 
-// Инициализация приложения
+// App initialization
 export const initializeApp = () => {
   console.log('🚀 BookCraft Russia - инициализация приложения');
   
-  // Инициализируем Telegram Bot
-  const bot = initTelegramBot();
+  console.log('✅ Приложение инициализировано');
   
   // Глобальные обработчики для отладки
   window.addEventListener('error', (event) => {
@@ -20,15 +19,12 @@ export const initializeApp = () => {
   // Экспортируем в window для отладки
   if (process.env.NODE_ENV === 'development') {
     (window as any).BookCraftDebug = {
-      bot,
       version: '1.0.0',
       features: {
         telegramBot: true,
-        cloudSync: true,
+        webApp: true,
         publicBooks: true
       }
     };
   }
-  
-  console.log('✅ BookCraft Russia - приложение инициализировано');
 };

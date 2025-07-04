@@ -1,13 +1,12 @@
-
 import { Button } from '@/components/ui/button';
-import { Cloud, RefreshCw, WifiOff } from 'lucide-react';
-import { useSync } from '@/hooks/useSync';
-import { useTelegram } from '@/hooks/useTelegram';
+import { RefreshCw } from 'lucide-react';
+import { useSimpleSync } from '@/hooks/useSimpleSync';
+import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
 import { toast } from '@/hooks/use-toast';
 
 const SyncButton = () => {
-  const { sync, isLoading, canSync, hasCloudStorage } = useSync();
-  const { isTelegramApp } = useTelegram();
+  const { telegramId, isTelegramWebApp } = useTelegramWebApp();
+  const { sync, isLoading, canSync } = useSimpleSync(telegramId);
 
   const handleSync = async () => {
     const result = await sync();
@@ -17,42 +16,20 @@ const SyncButton = () => {
       description: result.message,
       variant: result.success ? "default" : "destructive",
     });
-
-    // Перезагружаем ТОЛЬКО если были реальные изменения и НЕ "без изменений"
-    if (result.success && 
-        result.message.includes('Синхронизировано') && 
-        !result.message.includes('без изменений')) {
-      setTimeout(() => window.location.reload(), 1500);
-    }
   };
 
-  if (!isTelegramApp) return null;
-
-  const getIcon = () => {
-    if (isLoading) return <RefreshCw className="h-4 w-4 mr-2 animate-spin" />;
-    if (hasCloudStorage) return <Cloud className="h-4 w-4 mr-2" />;
-    return <WifiOff className="h-4 w-4 mr-2" />;
-  };
-
-  const getButtonText = () => {
-    if (isLoading) return 'Синхронизация...';
-    if (hasCloudStorage) return 'Облачная синхронизация';
-    return 'Ручная синхронизация';
-  };
+  if (!isTelegramWebApp) return null;
 
   return (
     <Button
       onClick={handleSync}
       disabled={isLoading || !canSync}
-      variant={hasCloudStorage ? "default" : "outline"}
+      variant="outline"
       size="sm"
-      className={hasCloudStorage 
-        ? "bg-primary hover:bg-primary/90" 
-        : "border-white/20 text-white hover:bg-white/10"
-      }
+      className="border-white/20 text-white hover:bg-white/10"
     >
-      {getIcon()}
-      {getButtonText()}
+      <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+      {isLoading ? 'Синхронизация...' : 'Синхронизировать'}
     </Button>
   );
 };

@@ -7,7 +7,7 @@ const corsHeaders = {
 }
 
 const TELEGRAM_BOT_TOKEN = '8071472545:AAEJ8YYW26LfJpJg_pcbXDCs9sJnAFiDYhk'
-const WEBAPP_URL = 'https://hvzxsjoszgakugpstipe.supabase.co'
+const WEBAPP_URL = 'https://knizhny-ostrov-rus.lovable.app'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
