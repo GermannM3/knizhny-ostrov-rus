@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { BookOpen, User, Mail, Lock, LogIn, UserPlus } from 'lucide-react';
+import { BookOpen, User, Mail, Lock, LogIn, UserPlus, Eye, EyeOff, Home } from 'lucide-react';
 
 // Используем существующий тип из useTelegramWebApp
 
@@ -20,6 +20,7 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -117,6 +118,16 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
             <h1 className="text-3xl font-bold text-white">BookCraft</h1>
           </div>
           <p className="text-gray-300">Создавайте и читайте книги</p>
+          
+          {/* Кнопка перехода в библиотеку */}
+          <Button
+            onClick={() => window.location.href = '/library'}
+            variant="outline"
+            className="mt-4 border-white/20 text-white hover:bg-white/10"
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Перейти к библиотеке
+          </Button>
         </div>
 
         <Card className="bg-white/10 backdrop-blur-lg border-white/20">
@@ -174,15 +185,22 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder={mode === 'login' ? 'Введите пароль' : 'Создайте пароль'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                    className="pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                     disabled={loading}
                     required
                     minLength={mode === 'register' ? 6 : undefined}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-400 hover:text-white"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
 
