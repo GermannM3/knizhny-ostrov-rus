@@ -5,6 +5,7 @@ interface TelegramWebApp {
   ready: () => void;
   close: () => void;
   expand: () => void;
+  isVersionAtLeast?: (version: string) => boolean;
   CloudStorage?: {
     setItem: (key: string, value: string, callback?: (error: string | null, result?: boolean) => void) => void;
     getItem: (key: string, callback: (error: string | null, result?: string) => void) => void;
@@ -114,15 +115,20 @@ export const useTelegram = () => {
         typeof app.CloudStorage.setItem === 'function' &&
         typeof app.CloudStorage.getItem === 'function';
       
-      if (hasCloudStorage && version >= 6.1) {
+      // Проверяем версию 6.9+ или используем isVersionAtLeast
+      const isVersionSupported = app.isVersionAtLeast ? 
+        app.isVersionAtLeast('6.9') : 
+        version >= 6.9;
+      
+      if (hasCloudStorage && isVersionSupported) {
         setCloudStorageReady(true);
         console.log('✅ Telegram Cloud Storage доступен (версия ' + app.version + ')');
       } else {
         setCloudStorageReady(false);
         console.log('❌ Telegram Cloud Storage недоступен');
         console.log('📱 Версия Telegram Web App:', app.version || 'неизвестно');
-        console.log('⚠️ Требуется версия 6.1+ для Cloud Storage');
-        console.log('💡 Обновите Telegram или используйте веб-версию');
+        console.log('⚠️ Требуется версия 6.9+ для Cloud Storage');
+        console.log('💡 Доступна только ручная синхронизация');
       }
       
       console.log('✅ Telegram Web App инициализирован:', app);

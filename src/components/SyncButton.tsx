@@ -1,29 +1,33 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Cloud, CloudOff, RefreshCw } from 'lucide-react';
+import { Cloud, CloudOff, RefreshCw, WifiOff } from 'lucide-react';
 import { useTelegramSync } from '@/utils/telegramSync';
+import { useManualSync } from '@/utils/manualSync';
+import { useTelegram } from '@/hooks/useTelegram';
 import { toast } from '@/hooks/use-toast';
 
 const SyncButton = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const tg = useTelegram();
   const telegramSync = useTelegramSync();
+  const manualSync = useManualSync();
 
   const handleSync = async () => {
-    if (!telegramSync.hasCloudStorage) {
-      toast({
-        title: "Синхронизация недоступна",
-        description: "Требуется Telegram версии 6.1+ для синхронизации данных",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
     
     try {
-      console.log('🔄 Запуск ручной синхронизации...');
-      const result = await telegramSync.sync();
+      let result;
+      
+      if (tg.cloudStorageReady) {
+        // Автоматическая синхронизация для версий 6.9+
+        console.log('🔄 Запуск автоматической синхронизации...');
+        result = await telegramSync.sync();
+      } else {
+        // Ручная синхронизация для старых версий
+        console.log('🔄 Запуск ручной синхронизации...');
+        result = await manualSync.fullSync();
+      }
       
       if (result.success) {
         toast({
@@ -39,7 +43,7 @@ const SyncButton = () => {
         toast({
           title: "Синхронизация завершена",
           description: result.message,
-          variant: result.hasCloudStorage ? "default" : "destructive",
+          variant: (result as any).hasCloudStorage !== false ? "default" : "destructive",
         });
       }
     } catch (error) {
@@ -54,26 +58,44 @@ const SyncButton = () => {
     }
   };
 
-  if (!telegramSync.isTelegramApp) {
+  if (!tg.isTelegramApp) {
     return null; // Показываем только в Telegram WebApp
   }
+
+  const getIcon = () => {
+    if (isLoading) {
+      return <RefreshCw className="h-4 w-4 mr-2 animate-spin" />;
+    }
+    
+    if (tg.cloudStorageReady) {
+      return <Cloud className="h-4 w-4 mr-2" />;
+    }
+    
+    return <WifiOff className="h-4 w-4 mr-2" />;
+  };
+
+  const getButtonText = () => {
+    if (isLoading) {
+      return 'Синхронизация...';
+    }
+    
+    if (tg.cloudStorageReady) {
+      return 'Синхронизировать';
+    }
+    
+    return 'Синхронизация вручную';
+  };
 
   return (
     <Button
       onClick={handleSync}
-      disabled={isLoading}
+      disabled={isLoading || (!tg.cloudStorageReady && !manualSync.isReady)}
       variant="outline"
       size="sm"
       className="border-white/20 text-white hover:bg-white/10"
     >
-      {isLoading ? (
-        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-      ) : telegramSync.hasCloudStorage ? (
-        <Cloud className="h-4 w-4 mr-2" />
-      ) : (
-        <CloudOff className="h-4 w-4 mr-2" />
-      )}
-      {isLoading ? 'Синхронизация...' : 'Синхронизировать'}
+      {getIcon()}
+      {getButtonText()}
     </Button>
   );
 };
