@@ -44,27 +44,43 @@ const TelegramWrapper = ({ children }: { children: React.ReactNode }) => {
     }
   }, []);
 
-  // Инициализируем синхронизацию для Telegram WebApp
+  // Автоматическая синхронизация при загрузке Telegram WebApp
   useEffect(() => {
     if (isReady && isTelegramApp) {
       const initSync = async () => {
         try {
-          // Импортируем синхронизацию динамически
-          const { useTelegramSync } = await import('@/utils/telegramSync');
-          const sync = new (await import('@/utils/telegramSync')).TelegramStorageSync(
-            (await import('@/hooks/useTelegram')).useTelegram()
-          );
+          console.log('🚀 Инициализируем синхронизацию для Telegram WebApp');
           
-          // Выполняем автоматическую синхронизацию
-          await sync.autoSync();
-          console.log('Синхронизация с Telegram Cloud Storage завершена');
+          // Импортируем новый синхронизатор
+          const { useTelegramSync } = await import('@/utils/telegramSync');
+          
+          // Ждем небольшую задержку для полной инициализации
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Создаем экземпляр синхронизатора и выполняем полную синхронизацию
+          const { TelegramRPCSync } = await import('@/utils/telegramSync');
+          const { useTelegram } = await import('@/hooks/useTelegram');
+          
+          const tgHook = useTelegram();
+          const syncInstance = new TelegramRPCSync(tgHook);
+          
+          const result = await syncInstance.fullSync();
+          
+          if (result) {
+            console.log('✅ Автоматическая синхронизация завершена успешно');
+          } else {
+            console.log('⚠️ Автоматическая синхронизация завершена с предупреждениями');
+          }
+          
+          // Принудительно обновляем страницу для отображения синхронизированных данных
+          window.location.reload();
+          
         } catch (error) {
-          console.error('Ошибка синхронизации:', error);
+          console.error('❌ Ошибка автоматической синхронизации:', error);
         }
       };
       
-      // Запускаем синхронизацию через небольшую задержку
-      setTimeout(initSync, 1000);
+      initSync();
     }
   }, [isReady, isTelegramApp]);
 

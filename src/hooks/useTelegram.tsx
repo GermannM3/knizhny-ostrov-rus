@@ -97,53 +97,44 @@ export const useTelegram = () => {
     }
   };
 
-  // Методы для работы с облачным хранилищем
-  const setCloudData = (key: string, value: string): Promise<boolean> => {
+  // Упрощенные методы для работы с облачным хранилищем
+  const setCloudData = async (key: string, value: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
       if (!tg?.CloudStorage) {
-        reject(new Error('Cloud Storage недоступен'));
+        console.log('Cloud Storage недоступен для записи');
+        resolve(false);
         return;
       }
       
+      console.log(`Сохраняем в облако ключ: ${key}`);
       tg.CloudStorage.setItem(key, value, (error, result) => {
         if (error) {
+          console.error(`Ошибка сохранения ${key}:`, error);
           reject(new Error(error));
         } else {
-          resolve(result || false);
+          console.log(`Успешно сохранен ключ: ${key}`);
+          resolve(result || true);
         }
       });
     });
   };
 
-  const getCloudData = (key: string): Promise<string | null> => {
+  const getCloudData = async (key: string): Promise<string | null> => {
     return new Promise((resolve, reject) => {
       if (!tg?.CloudStorage) {
-        reject(new Error('Cloud Storage недоступен'));
+        console.log('Cloud Storage недоступен для чтения');
+        resolve(null);
         return;
       }
       
+      console.log(`Загружаем из облака ключ: ${key}`);
       tg.CloudStorage.getItem(key, (error, result) => {
         if (error) {
+          console.error(`Ошибка загрузки ${key}:`, error);
           reject(new Error(error));
         } else {
+          console.log(`Загружен ключ ${key}:`, result ? 'данные найдены' : 'данных нет');
           resolve(result || null);
-        }
-      });
-    });
-  };
-
-  const getCloudKeys = (): Promise<string[]> => {
-    return new Promise((resolve, reject) => {
-      if (!tg?.CloudStorage) {
-        reject(new Error('Cloud Storage недоступен'));
-        return;
-      }
-      
-      tg.CloudStorage.getKeys((error, result) => {
-        if (error) {
-          reject(new Error(error));
-        } else {
-          resolve(result || []);
         }
       });
     });
@@ -158,7 +149,6 @@ export const useTelegram = () => {
     isTelegramApp: !!tg,
     cloudStorageReady,
     setCloudData,
-    getCloudData,
-    getCloudKeys
+    getCloudData
   };
 };

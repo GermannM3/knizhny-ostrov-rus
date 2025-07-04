@@ -9,7 +9,7 @@ import { useTelegramSync } from '@/utils/telegramSync';
 const Navigation = () => {
   const { user, logout } = useAuth();
   const { isTelegramApp, user: tgUser } = useTelegram();
-  const { isReady: syncReady, autoSync } = useTelegramSync();
+  const { isReady: syncReady, sync } = useTelegramSync();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -25,14 +25,22 @@ const Navigation = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const handleSync = async () => {
-    if (!syncReady) return;
+    if (!syncReady || syncing) return;
     
     setSyncing(true);
     try {
-      await autoSync();
-      console.log('Ручная синхронизация завершена');
+      console.log('🔄 Запускаем ручную синхронизацию...');
+      const result = await sync();
+      
+      if (result) {
+        console.log('✅ Ручная синхронизация успешна');
+        // Обновляем страницу для отображения синхронизированных данных
+        window.location.reload();
+      } else {
+        console.log('⚠️ Синхронизация завершена с предупреждениями');
+      }
     } catch (error) {
-      console.error('Ошибка ручной синхронизации:', error);
+      console.error('❌ Ошибка ручной синхронизации:', error);
     } finally {
       setSyncing(false);
     }
@@ -43,26 +51,26 @@ const Navigation = () => {
       <div className="flex items-center justify-between">
         <Link to="/library" className="flex items-center space-x-2">
           <Book className="h-8 w-8 text-amber-400" />
-          <span className="text-xl font-bold gradient-text">
-            BookCraft
+          <div className="flex items-center">
+            <span className="text-xl font-bold gradient-text">BookCraft</span>
             {isTelegramApp && (
-              <div className="flex items-center space-x-2">
-                <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full ml-2">
+              <div className="flex items-center space-x-2 ml-2">
+                <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
                   Telegram
                 </span>
                 {syncReady && (
                   <button
                     onClick={handleSync}
                     disabled={syncing}
-                    className="text-xs bg-green-500 text-white px-2 py-1 rounded-full hover:bg-green-600 disabled:opacity-50"
-                    title="Синхронизировать данные"
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded-full hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Синхронизировать данные с веб-версией"
                   >
-                    {syncing ? '⟳' : '↻'}
+                    {syncing ? '🔄' : '↻'}
                   </button>
                 )}
               </div>
             )}
-          </span>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
@@ -142,18 +150,30 @@ const Navigation = () => {
                   <span className="text-xs text-blue-400">(@{tgUser.username || tgUser.first_name})</span>
                 )}
               </div>
-              <Button 
-                onClick={() => {
-                  logout();
-                  setMobileMenuOpen(false);
-                }}
-                variant="ghost" 
-                size="sm"
-                className="text-gray-300 hover:text-red-400"
-                title="Выход"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center space-x-2">
+                {isTelegramApp && syncReady && (
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="text-xs bg-green-500 text-white px-2 py-1 rounded-full hover:bg-green-600 disabled:opacity-50"
+                    title="Синхронизировать"
+                  >
+                    {syncing ? '🔄' : '↻'}
+                  </button>
+                )}
+                <Button 
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  variant="ghost" 
+                  size="sm"
+                  className="text-gray-300 hover:text-red-400"
+                  title="Выход"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
