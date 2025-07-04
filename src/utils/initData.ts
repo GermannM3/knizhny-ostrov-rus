@@ -20,13 +20,13 @@ export const initializeTestData = () => {
     telegram_id: undefined
   });
   
-  // Создаем тестовые книги
+  // Создаем тестовые книги с обложками БЕЗ людей
   const book1 = createBook({
     title: 'Моя первая книга',
     description: 'Это описание моей первой книги, которая была создана в BookCraft.',
     genre: 'Художественная литература',
     status: 'published',
-    coverImage: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop',
+    coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop', // Мистический лес
     authorId: adminUser.id,
     price: 299,
     is_public: true
@@ -37,7 +37,7 @@ export const initializeTestData = () => {
     description: 'Сборник технических статей и заметок о разработке.',
     genre: 'Техническая литература',
     status: 'published',
-    coverImage: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop',
+    coverImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=300&h=400&fit=crop', // Космос
     authorId: adminUser.id,
     price: 199,
     is_public: true
@@ -48,7 +48,7 @@ export const initializeTestData = () => {
     description: 'Захватывающие истории о путешествиях по миру.',
     genre: 'Приключения',
     status: 'published',
-    coverImage: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=300&h=400&fit=crop',
+    coverImage: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?w=300&h=400&fit=crop', // Горный пейзаж
     authorId: user2.id,
     price: 399,
     is_public: true

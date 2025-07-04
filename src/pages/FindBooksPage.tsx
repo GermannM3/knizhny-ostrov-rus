@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Book } from '@/types';
 import Navigation from '@/components/Navigation';
@@ -19,7 +18,7 @@ const FindBooksPage = () => {
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  // Эмулируем внешние книги (позже можно заменить на API)
+  // Эмулируем внешние книги с обложками БЕЗ людей
   const mockExternalBooks: Book[] = [
     {
       id: 'ext-1',
@@ -27,7 +26,7 @@ const FindBooksPage = () => {
       description: 'Классический роман Льва Толстого о войне 1812 года и судьбах русского дворянства.',
       genre: 'Классическая литература',
       status: 'published',
-      coverImage: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=300&h=400&fit=crop',
+      coverImage: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=300&h=400&fit=crop', // Сосновый лес
       authorId: 'tolstoy',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -44,7 +43,7 @@ const FindBooksPage = () => {
       description: 'Психологический роман Достоевского о моральном конфликте молодого студента.',
       genre: 'Классическая литература',
       status: 'published',
-      coverImage: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop',
+      coverImage: 'https://images.unsplash.com/photo-1482881497185-d4a9ddbe4151?w=300&h=400&fit=crop', // Пустыня
       authorId: 'dostoevsky',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -61,7 +60,7 @@ const FindBooksPage = () => {
       description: 'Мистический роман Булгакова, переплетающий современность и библейские мотивы.',
       genre: 'Мистика',
       status: 'published',
-      coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
+      coverImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop', // Мистический лес
       authorId: 'bulgakov',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -78,7 +77,7 @@ const FindBooksPage = () => {
       description: 'Роман о любви, страсти и трагических последствиях нарушения общественных норм.',
       genre: 'Классическая литература',
       status: 'published',
-      coverImage: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&h=400&fit=crop',
+      coverImage: 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=300&h=400&fit=crop', // Горы
       authorId: 'tolstoy',
       createdAt: new Date(),
       updatedAt: new Date(),
