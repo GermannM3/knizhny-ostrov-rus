@@ -114,7 +114,7 @@ const Navigation = () => {
     },
     ...(isAuthenticated ? [
       { 
-        path: '/purchased-books', 
+        path: '/purchased', 
         label: 'Купленные', 
         icon: ShoppingBag,
         public: false 

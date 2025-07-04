@@ -56,6 +56,19 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Если нет сессии и мы в Telegram WebApp, пытаемся авторизоваться автоматически
+      if (!session && window.Telegram?.WebApp?.initDataUnsafe?.user) {
+        const telegramUser = window.Telegram.WebApp.initDataUnsafe.user;
+        console.log('🔄 Автоматическая авторизация через Telegram:', telegramUser);
+        signInWithTelegram(telegramUser).then(({ error }) => {
+          if (error) {
+            console.error('❌ Ошибка автоматической авторизации через Telegram:', error);
+          } else {
+            console.log('✅ Автоматическая авторизация через Telegram успешна');
+          }
+        });
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -110,20 +123,36 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         .single();
 
       if (existingUser) {
-        // Если пользователь существует, создаем сессию
-        const { error } = await supabase.auth.signInWithPassword({
+        // Если пользователь существует, авторизуем через специальный Telegram токен
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: existingUser.email,
-          password: existingUser.password || 'telegram_auth'
+          password: 'telegram_auth_' + telegramData.id
         });
+        
+        if (error) {
+          // Если пароль не подошел, обновляем его
+          await supabase.from('users').update({
+            password: 'telegram_auth_' + telegramData.id
+          }).eq('telegram_id', telegramData.id);
+          
+          // Пробуем снова
+          const { error: retryError } = await supabase.auth.signInWithPassword({
+            email: existingUser.email,
+            password: 'telegram_auth_' + telegramData.id
+          });
+          return { error: retryError };
+        }
+        
         return { error };
       } else {
         // Создаем нового пользователя
         const email = `telegram_${telegramData.id}@bookcraft.ru`;
         const name = telegramData.first_name + (telegramData.last_name ? ` ${telegramData.last_name}` : '');
+        const password = 'telegram_auth_' + telegramData.id;
         
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
-          password: 'telegram_auth',
+          password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
@@ -135,13 +164,14 @@ export const SupabaseAuthProvider = ({ children }: { children: React.ReactNode }
         });
 
         if (!signUpError && data.user) {
-          // Создаем пользователя в таблице users с правильным id
+          // Создаем пользователя в таблице users с правильным id и паролем
           await supabase.from('users').insert({
             id: data.user.id,
             email,
             name,
             full_name: name,
-            telegram_id: telegramData.id
+            telegram_id: telegramData.id,
+            password: password
           });
         }
 
