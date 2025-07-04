@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getBooks, getBookChapters, updateBook, saveReadingProgress, getUserReadingProgress, addToFavorites, removeFromFavorites, isFavorite } from '@/utils/storage';
@@ -44,7 +43,8 @@ const ReadBook = () => {
             isFavorite: false,
             source: 'external',
             format: 'pdf',
-            price: 299
+            price: 299,
+            is_public: true
           },
           {
             id: 'ext-2',
@@ -60,7 +60,8 @@ const ReadBook = () => {
             isFavorite: false,
             source: 'external',
             format: 'epub',
-            price: 249
+            price: 249,
+            is_public: true
           },
           {
             id: 'ext-3',
@@ -76,7 +77,8 @@ const ReadBook = () => {
             isFavorite: false,
             source: 'external',
             format: 'pdf',
-            price: 399
+            price: 399,
+            is_public: true
           },
           {
             id: 'ext-4',
@@ -92,7 +94,8 @@ const ReadBook = () => {
             isFavorite: false,
             source: 'external',
             format: 'epub',
-            price: 279
+            price: 279,
+            is_public: true
           }
         ];
         foundBook = externalBooks.find(b => b.id === id);

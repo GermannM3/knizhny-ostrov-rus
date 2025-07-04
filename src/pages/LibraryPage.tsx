@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { getPublishedBooks, getUsers, getBooks } from '@/utils/storage';
 import { Book, User } from '@/types';
@@ -38,7 +37,8 @@ const LibraryPage = () => {
         isFavorite: false,
         source: 'external',
         format: 'pdf',
-        price: 299
+        price: 299,
+        is_public: true
       },
       {
         id: 'ext-2',
@@ -54,7 +54,8 @@ const LibraryPage = () => {
         isFavorite: false,
         source: 'external',
         format: 'epub',
-        price: 249
+        price: 249,
+        is_public: true
       },
       {
         id: 'ext-3',
@@ -70,7 +71,8 @@ const LibraryPage = () => {
         isFavorite: false,
         source: 'external',
         format: 'pdf',
-        price: 399
+        price: 399,
+        is_public: true
       },
       {
         id: 'ext-4',
@@ -86,7 +88,8 @@ const LibraryPage = () => {
         isFavorite: false,
         source: 'external',
         format: 'epub',
-        price: 279
+        price: 279,
+        is_public: true
       }
     ];
     
@@ -268,4 +271,3 @@ const LibraryPage = () => {
 };
 
 export default LibraryPage;
-

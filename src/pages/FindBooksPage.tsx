@@ -35,7 +35,8 @@ const FindBooksPage = () => {
       isFavorite: false,
       source: 'external',
       format: 'pdf',
-      price: 299
+      price: 299,
+      is_public: true
     },
     {
       id: 'ext-2',
@@ -51,7 +52,8 @@ const FindBooksPage = () => {
       isFavorite: false,
       source: 'external',
       format: 'epub',
-      price: 249
+      price: 249,
+      is_public: true
     },
     {
       id: 'ext-3',
@@ -67,7 +69,8 @@ const FindBooksPage = () => {
       isFavorite: false,
       source: 'external',
       format: 'pdf',
-      price: 399
+      price: 399,
+      is_public: true
     },
     {
       id: 'ext-4',
@@ -83,7 +86,8 @@ const FindBooksPage = () => {
       isFavorite: false,
       source: 'external',
       format: 'epub',
-      price: 279
+      price: 279,
+      is_public: true
     }
   ];
 
