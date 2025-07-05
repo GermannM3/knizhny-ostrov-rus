@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,8 +23,27 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Поддерживаем обе системы авторизации
+  const localStorage_auth = useAuth();
+  const supabase_auth = useSupabaseAuth();
 
   useEffect(() => {
+    // Проверяем localStorage авторизацию сначала
+    if (localStorage_auth.isAuthenticated) {
+      console.log('✅ Найден пользователь в localStorage:', localStorage_auth.user?.email);
+      onAuthSuccess();
+      return;
+    }
+    
+    // Проверяем Supabase авторизацию
+    if (supabase_auth.isAuthenticated) {
+      console.log('✅ Найден пользователь в Supabase:', supabase_auth.user?.email);
+      onAuthSuccess();
+      return;
+    }
+    
+    // Инициализируем Telegram WebApp
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
@@ -33,7 +54,7 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
         setTelegramUser(user);
       }
     }
-  }, []);
+  }, [localStorage_auth.isAuthenticated, supabase_auth.isAuthenticated]);
 
   async function handleTelegramLogin() {
     if (!telegramUser) {
@@ -80,13 +101,33 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
     setError('');
     
     try {
+      // Сначала пробуем localStorage систему (для существующих пользователей)
       if (mode === 'login') {
+        const localStorage_success = await localStorage_auth.login(email, password);
+        if (localStorage_success) {
+          console.log('✅ Успешный вход через localStorage');
+          onAuthSuccess();
+          return;
+        }
+        
+        // Если не получилось через localStorage, пробуем Supabase
         const { error } = await supabase.auth.signInWithPassword({ 
           email, 
           password 
         });
         if (error) throw error;
+        
+        console.log('✅ Успешный вход через Supabase');
       } else {
+        // Регистрация через localStorage (чтобы не ломать существующую систему)
+        const localStorage_success = await localStorage_auth.register(email, password, email.split('@')[0]);
+        if (localStorage_success) {
+          console.log('✅ Успешная регистрация через localStorage');
+          onAuthSuccess();
+          return;
+        }
+        
+        // Fallback на Supabase регистрацию
         const { error } = await supabase.auth.signUp({ 
           email, 
           password,
@@ -98,6 +139,8 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
           }
         });
         if (error) throw error;
+        
+        console.log('✅ Успешная регистрация через Supabase');
       }
       
       onAuthSuccess();
