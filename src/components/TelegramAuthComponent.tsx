@@ -197,15 +197,20 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Telegram авторизация */}
-            {telegramUser && (
+            {(telegramUser || !window.Telegram?.WebApp) && (
               <div className="space-y-4">
                 <Button
                   onClick={handleTelegramLogin}
-                  disabled={loading}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                  disabled={loading || !telegramUser}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
                 >
                   <User className="h-4 w-4 mr-2" />
-                  {loading ? 'Загрузка...' : `Войти как ${telegramUser.first_name}`}
+                  {loading 
+                    ? 'Загрузка...' 
+                    : telegramUser 
+                      ? `Войти как ${telegramUser.first_name}`
+                      : 'Войти через Telegram (недоступно в веб-версии)'
+                  }
                 </Button>
                 
                 <div className="relative">

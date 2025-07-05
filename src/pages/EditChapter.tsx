@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useAutoSync } from '@/hooks/useAutoSync';
 import { getBooks, getChapters, saveChapter, updateChapter, getBookChapters } from '@/utils/storage';
 import { Book, Chapter } from '@/types';
 import Navigation from '@/components/Navigation';
@@ -16,6 +17,7 @@ const EditChapter = () => {
   const { bookId, chapterId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { syncData } = useAutoSync();
   
   const [book, setBook] = useState<Book | null>(null);
   const [chapter, setChapter] = useState<Chapter | null>(null);
@@ -103,6 +105,11 @@ const EditChapter = () => {
         description: "Изменения успешно сохранены.",
       });
     }
+
+    // Автоматическая синхронизация после создания/обновления главы
+    setTimeout(async () => {
+      await syncData();
+    }, 500);
 
     navigate(`/edit/${book.id}`);
   };

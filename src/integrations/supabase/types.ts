@@ -420,15 +420,7 @@ export type Database = {
           search_engine?: string | null
           url?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "position_tracking_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "user_projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       products: {
         Row: {
@@ -559,15 +551,7 @@ export type Database = {
           target_position?: number | null
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "project_keywords_project_id_fkey"
-            columns: ["project_id"]
-            isOneToOne: false
-            referencedRelation: "user_projects"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       projects: {
         Row: {

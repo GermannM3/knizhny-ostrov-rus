@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useTelegramWebApp } from '@/hooks/useTelegramWebApp';
+import { useAutoSync } from '@/hooks/useAutoSync';
 import { saveBook } from '@/utils/storage';
 import { bookCovers, getRandomCover, genres, genreCovers } from '@/data/bookCovers';
 import Navigation from '@/components/Navigation';
@@ -18,6 +19,7 @@ const CreateBook = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isTelegramWebApp } = useTelegramWebApp();
+  const { syncData } = useAutoSync();
   const [selectedCover, setSelectedCover] = useState(getRandomCover());
   const [formData, setFormData] = useState({
     title: '',
@@ -86,6 +88,13 @@ const CreateBook = () => {
       is_public: newBook.is_public,
       from_telegram: isTelegramWebApp
     });
+
+    // Автоматическая синхронизация после создания книги
+    if (isTelegramWebApp) {
+      setTimeout(async () => {
+        await syncData();
+      }, 500);
+    }
 
     navigate(`/edit/${newBook.id}`);
   };

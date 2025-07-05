@@ -40,6 +40,7 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/create" element={<CreateBook />} />
                 <Route path="/edit/:id" element={<EditBook />} />
+                <Route path="/edit/:bookId/add-chapter" element={<EditChapter />} />
                 <Route path="/edit/:bookId/chapter/:chapterId" element={<EditChapter />} />
                 <Route path="/read/:id" element={<ReadBook />} />
                 <Route path="/profile" element={<ProfilePage />} />
