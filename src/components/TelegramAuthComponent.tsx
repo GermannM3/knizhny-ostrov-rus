@@ -85,8 +85,24 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
 
       console.log('✅ Синхронизация успешна:', syncResult);
       
-      // Успешная авторизация через Telegram
-      onAuthSuccess();
+      // Создаем пользователя в localStorage системе для авторизации
+      const telegramEmail = `telegram_${telegramUser.id}@bookcraft.ru`;
+      const telegramPassword = `tg_${telegramUser.id}_${telegramUser.first_name}`;
+      const userName = telegramUser.first_name + (telegramUser.last_name ? ' ' + telegramUser.last_name : '');
+      
+      // Регистрируем/логиним через localStorage систему
+      let authSuccess = await localStorage_auth.login(telegramEmail, telegramPassword);
+      if (!authSuccess) {
+        // Если не получилось войти, значит пользователя нет - регистрируем
+        authSuccess = await localStorage_auth.register(telegramEmail, telegramPassword, userName);
+      }
+      
+      if (authSuccess) {
+        console.log('✅ Telegram пользователь авторизован в localStorage');
+        onAuthSuccess();
+      } else {
+        throw new Error('Не удалось создать сессию для Telegram пользователя');
+      }
       
     } catch (e: any) {
       console.error('❌ Telegram login error:', e);
