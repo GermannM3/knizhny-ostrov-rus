@@ -23,6 +23,9 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [showTelegramForm, setShowTelegramForm] = useState(false);
+  const [telegramId, setTelegramId] = useState('');
+  const [telegramName, setTelegramName] = useState('');
   
   // Поддерживаем обе системы авторизации
   const localStorage_auth = useAuth();
@@ -106,6 +109,69 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
       
     } catch (e: any) {
       console.error('❌ Telegram login error:', e);
+      setError(e.message || 'Ошибка авторизации через Telegram');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleManualTelegramLogin() {
+    if (!telegramId || !telegramName) {
+      setError('Введите Telegram ID и имя.');
+      return;
+    }
+    
+    setLoading(true);
+    setError('');
+    
+    try {
+      const manualTelegramUser = {
+        id: parseInt(telegramId),
+        first_name: telegramName,
+        last_name: '',
+        username: ''
+      };
+      
+      console.log('🔄 Начинаем ручную Telegram авторизацию:', manualTelegramUser);
+      
+      // Вызываем функцию синхронизации
+      const { data: syncResult, error: syncError } = await supabase.rpc('sync_telegram_data', {
+        p_telegram_id: manualTelegramUser.id,
+        p_data: {
+          first_name: manualTelegramUser.first_name,
+          last_name: manualTelegramUser.last_name,
+          username: manualTelegramUser.username
+        }
+      });
+
+      if (syncError) {
+        console.error('❌ Ошибка синхронизации:', syncError);
+        throw syncError;
+      }
+
+      console.log('✅ Синхронизация успешна:', syncResult);
+      
+      // Создаем пользователя в localStorage системе для авторизации
+      const telegramEmail = `telegram_${manualTelegramUser.id}@bookcraft.ru`;
+      const telegramPassword = `tg_${manualTelegramUser.id}_${manualTelegramUser.first_name}`;
+      const userName = manualTelegramUser.first_name;
+      
+      // Регистрируем/логиним через localStorage систему
+      let authSuccess = await localStorage_auth.login(telegramEmail, telegramPassword);
+      if (!authSuccess) {
+        // Если не получилось войти, значит пользователя нет - регистрируем
+        authSuccess = await localStorage_auth.register(telegramEmail, telegramPassword, userName);
+      }
+      
+      if (authSuccess) {
+        console.log('✅ Telegram пользователь авторизован в localStorage');
+        onAuthSuccess();
+      } else {
+        throw new Error('Не удалось создать сессию для Telegram пользователя');
+      }
+      
+    } catch (e: any) {
+      console.error('❌ Manual Telegram login error:', e);
       setError(e.message || 'Ошибка авторизации через Telegram');
     } finally {
       setLoading(false);
@@ -198,29 +264,76 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
           <CardContent className="space-y-6">
             {/* Telegram авторизация */}
             <div className="space-y-4">
-              <Button
-                onClick={handleTelegramLogin}
-                disabled={loading || !telegramUser}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
-              >
-                <User className="h-4 w-4 mr-2" />
-                {loading 
-                  ? 'Загрузка...' 
-                  : telegramUser 
-                    ? `Войти как ${telegramUser.first_name}`
-                    : 'Войти через Telegram (недоступно в веб-версии)'
-                }
-              </Button>
+              {telegramUser ? (
+                <Button
+                  onClick={handleTelegramLogin}
+                  disabled={loading}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  {loading ? 'Загрузка...' : `Войти как ${telegramUser.first_name}`}
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => setShowTelegramForm(!showTelegramForm)}
+                    disabled={loading}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Войти через Telegram
+                  </Button>
+                  
+                  {showTelegramForm && (
+                    <div className="space-y-3 p-4 bg-white/5 rounded-lg border border-white/10">
+                      <div className="space-y-2">
+                        <Label htmlFor="telegramId" className="text-white text-sm">Telegram ID</Label>
+                        <Input
+                          id="telegramId"
+                          type="number"
+                          placeholder="Ваш Telegram ID"
+                          value={telegramId}
+                          onChange={(e) => setTelegramId(e.target.value)}
+                          className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="telegramName" className="text-white text-sm">Имя</Label>
+                        <Input
+                          id="telegramName"
+                          type="text"
+                          placeholder="Ваше имя"
+                          value={telegramName}
+                          onChange={(e) => setTelegramName(e.target.value)}
+                          className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                          disabled={loading}
+                        />
+                      </div>
+                      <Button
+                        onClick={handleManualTelegramLogin}
+                        disabled={loading || !telegramId || !telegramName}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {loading ? 'Загрузка...' : 'Войти'}
+                      </Button>
+                      <p className="text-xs text-gray-400">
+                        Чтобы узнать свой Telegram ID, напишите боту @userinfobot
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
                 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-white/20" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white/10 px-2 text-gray-400">или</span>
-                  </div>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-white/20" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white/10 px-2 text-gray-400">или</span>
                 </div>
               </div>
+            </div>
 
             {/* Email/Password форма */}
             <div className="space-y-4">
