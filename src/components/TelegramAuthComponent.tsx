@@ -23,9 +23,6 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
   const [error, setError] = useState('');
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [showPassword, setShowPassword] = useState(false);
-  const [showTelegramForm, setShowTelegramForm] = useState(false);
-  const [telegramId, setTelegramId] = useState('');
-  const [telegramName, setTelegramName] = useState('');
   
   // Поддерживаем обе системы авторизации
   const localStorage_auth = useAuth();
@@ -115,100 +112,64 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
     }
   }
 
-  async function handleManualTelegramLogin() {
-    if (!telegramId || !telegramName) {
-      setError('Введите Telegram ID и имя.');
-      return;
-    }
+  const handleTelegramAuth = () => {
+    // Открываем авторизацию Telegram в новом окне
+    const botUsername = 'BookCraftBot'; // Замените на имя вашего бота
+    const returnUrl = encodeURIComponent(`${window.location.origin}/auth`);
+    const telegramAuthUrl = `https://t.me/${botUsername}?start=auth_${Date.now()}`;
     
-    setLoading(true);
-    setError('');
+    // Открываем Telegram для авторизации
+    window.open(telegramAuthUrl, '_blank');
     
-    try {
-      const manualTelegramUser = {
-        id: parseInt(telegramId),
-        first_name: telegramName,
-        last_name: '',
-        username: ''
-      };
-      
-      console.log('🔄 Начинаем ручную Telegram авторизацию:', manualTelegramUser);
-      
-      // Вызываем функцию синхронизации
-      const { data: syncResult, error: syncError } = await supabase.rpc('sync_telegram_data', {
-        p_telegram_id: manualTelegramUser.id,
-        p_data: {
-          first_name: manualTelegramUser.first_name,
-          last_name: manualTelegramUser.last_name,
-          username: manualTelegramUser.username
-        }
-      });
-
-      if (syncError) {
-        console.error('❌ Ошибка синхронизации:', syncError);
-        throw syncError;
-      }
-
-      console.log('✅ Синхронизация успешна:', syncResult);
-      
-      // Создаем пользователя в localStorage системе для авторизации
-      const telegramEmail = `telegram_${manualTelegramUser.id}@bookcraft.ru`;
-      const telegramPassword = `tg_${manualTelegramUser.id}_${manualTelegramUser.first_name}`;
-      const userName = manualTelegramUser.first_name;
-      
-      // Регистрируем/логиним через localStorage систему
-      let authSuccess = await localStorage_auth.login(telegramEmail, telegramPassword);
-      if (!authSuccess) {
-        // Если не получилось войти, значит пользователя нет - регистрируем
-        authSuccess = await localStorage_auth.register(telegramEmail, telegramPassword, userName);
-      }
-      
-      if (authSuccess) {
-        console.log('✅ Telegram пользователь авторизован в localStorage');
-        onAuthSuccess();
-      } else {
-        throw new Error('Не удалось создать сессию для Telegram пользователя');
-      }
-      
-    } catch (e: any) {
-      console.error('❌ Manual Telegram login error:', e);
-      setError(e.message || 'Ошибка авторизации через Telegram');
-    } finally {
-      setLoading(false);
-    }
-  }
+    // Можно также добавить слушатель для получения результата авторизации
+    setError('Подтвердите авторизацию в Telegram, затем вернитесь сюда и обновите страницу');
+  };
 
   async function handleEmailAuth() {
     setLoading(true);
     setError('');
     
     try {
+      console.log(`🔐 Попытка ${mode === 'login' ? 'входа' : 'регистрации'} с email:`, email);
+      
       // Сначала пробуем localStorage систему (для существующих пользователей)
       if (mode === 'login') {
+        console.log('📝 Пробуем localStorage авторизацию...');
         const localStorage_success = await localStorage_auth.login(email, password);
+        console.log('📝 Результат localStorage авторизации:', localStorage_success);
+        
         if (localStorage_success) {
           console.log('✅ Успешный вход через localStorage');
           onAuthSuccess();
           return;
         }
         
+        console.log('📝 Пробуем Supabase авторизацию...');
         // Если не получилось через localStorage, пробуем Supabase
         const { error } = await supabase.auth.signInWithPassword({ 
           email, 
           password 
         });
-        if (error) throw error;
+        
+        if (error) {
+          console.error('❌ Supabase auth error:', error);
+          throw error;
+        }
         
         console.log('✅ Успешный вход через Supabase');
       } else {
+        console.log('📝 Пробуем localStorage регистрацию...');
         // Регистрация через localStorage (чтобы не ломать существующую систему)
         const localStorage_success = await localStorage_auth.register(email, password, email.split('@')[0]);
+        console.log('📝 Результат localStorage регистрации:', localStorage_success);
+        
         if (localStorage_success) {
           console.log('✅ Успешная регистрация через localStorage');
           onAuthSuccess();
           return;
         }
         
+        console.log('📝 Пробуем Supabase регистрацию...');
         // Fallback на Supabase регистрацию
         const { error } = await supabase.auth.signUp({ 
           email, 
@@ -220,7 +181,11 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
             }
           }
         });
-        if (error) throw error;
+        
+        if (error) {
+          console.error('❌ Supabase signup error:', error);
+          throw error;
+        }
         
         console.log('✅ Успешная регистрация через Supabase');
       }
@@ -228,7 +193,9 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
       onAuthSuccess();
     } catch (e: any) {
       console.error('❌ Email auth error:', e);
-      setError(e.message || 'Ошибка при входе/регистрации');
+      const errorMessage = e.message || 'Ошибка при входе/регистрации';
+      console.error('❌ Error message for user:', errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -274,55 +241,14 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
                   {loading ? 'Загрузка...' : `Войти как ${telegramUser.first_name}`}
                 </Button>
               ) : (
-                <>
-                  <Button
-                    onClick={() => setShowTelegramForm(!showTelegramForm)}
-                    disabled={loading}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    Войти через Telegram
-                  </Button>
-                  
-                  {showTelegramForm && (
-                    <div className="space-y-3 p-4 bg-white/5 rounded-lg border border-white/10">
-                      <div className="space-y-2">
-                        <Label htmlFor="telegramId" className="text-white text-sm">Telegram ID</Label>
-                        <Input
-                          id="telegramId"
-                          type="number"
-                          placeholder="Ваш Telegram ID"
-                          value={telegramId}
-                          onChange={(e) => setTelegramId(e.target.value)}
-                          className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                          disabled={loading}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="telegramName" className="text-white text-sm">Имя</Label>
-                        <Input
-                          id="telegramName"
-                          type="text"
-                          placeholder="Ваше имя"
-                          value={telegramName}
-                          onChange={(e) => setTelegramName(e.target.value)}
-                          className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                          disabled={loading}
-                        />
-                      </div>
-                      <Button
-                        onClick={handleManualTelegramLogin}
-                        disabled={loading || !telegramId || !telegramName}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                      >
-                        {loading ? 'Загрузка...' : 'Войти'}
-                      </Button>
-                      <p className="text-xs text-gray-400">
-                        Чтобы узнать свой Telegram ID, напишите боту @userinfobot
-                      </p>
-                    </div>
-                  )}
-                </>
+                <Button
+                  onClick={handleTelegramAuth}
+                  disabled={loading}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Войти через Telegram
+                </Button>
               )}
                 
               <div className="relative">
