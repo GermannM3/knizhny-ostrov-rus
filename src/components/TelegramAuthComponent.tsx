@@ -197,21 +197,20 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Telegram авторизация */}
-            {(telegramUser || !window.Telegram?.WebApp) && (
-              <div className="space-y-4">
-                <Button
-                  onClick={handleTelegramLogin}
-                  disabled={loading || !telegramUser}
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
-                >
-                  <User className="h-4 w-4 mr-2" />
-                  {loading 
-                    ? 'Загрузка...' 
-                    : telegramUser 
-                      ? `Войти как ${telegramUser.first_name}`
-                      : 'Войти через Telegram (недоступно в веб-версии)'
-                  }
-                </Button>
+            <div className="space-y-4">
+              <Button
+                onClick={handleTelegramLogin}
+                disabled={loading || !telegramUser}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
+              >
+                <User className="h-4 w-4 mr-2" />
+                {loading 
+                  ? 'Загрузка...' 
+                  : telegramUser 
+                    ? `Войти как ${telegramUser.first_name}`
+                    : 'Войти через Telegram (недоступно в веб-версии)'
+                }
+              </Button>
                 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
@@ -222,7 +221,6 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
                   </div>
                 </div>
               </div>
-            )}
 
             {/* Email/Password форма */}
             <div className="space-y-4">
