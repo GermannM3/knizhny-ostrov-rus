@@ -13,6 +13,76 @@ serve(async (req) => {
   }
 
   try {
+    // Если это webhook от Telegram, обрабатываем напрямую
+    if (req.url.includes('/webhook')) {
+      const update = await req.json()
+      console.log('📲 Telegram webhook received:', JSON.stringify(update))
+      
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+      
+      // Обрабатываем успешный платеж
+      if (update.successful_payment) {
+        const payment = update.successful_payment
+        const payload = JSON.parse(payment.invoice_payload)
+        const invoiceId = payload.invoice_id
+
+        console.log(`💰 Payment successful for invoice ${invoiceId}`)
+
+        // Обновляем статус инвойса
+        const { error: updateError } = await supabaseClient
+          .from('payment_invoices')
+          .update({ status: 'paid' })
+          .eq('id', invoiceId)
+
+        if (updateError) {
+          console.error('Failed to update invoice:', updateError)
+          throw updateError
+        }
+
+        // Сохраняем информацию о платеже
+        const { error: paymentError } = await supabaseClient
+          .from('telegram_payments')
+          .insert({
+            invoice_id: invoiceId,
+            payment_id: payment.telegram_payment_charge_id
+          })
+
+        if (paymentError) {
+          console.error('Failed to save payment:', paymentError)
+          throw paymentError
+        }
+
+        // Получаем информацию об инвойсе для создания ссылки на скачивание
+        const { data: invoice } = await supabaseClient
+          .from('payment_invoices')
+          .select('*, torrent_books(*)')
+          .eq('id', invoiceId)
+          .single()
+
+        if (invoice) {
+          // Создаем запись о скачивании
+          const { error: downloadError } = await supabaseClient
+            .from('book_downloads')
+            .insert({
+              book_id: invoice.book_id,
+              user_id: invoice.user_id,
+              file_url: invoice.torrent_books.magnet_link
+            })
+
+          if (downloadError) {
+            console.error('Failed to create download record:', downloadError)
+          } else {
+            console.log(`📥 Download access granted for book ${invoice.torrent_books.title}`)
+          }
+        }
+      }
+
+      return new Response('OK', { status: 200 })
+    }
+
     const { action, ...data } = await req.json()
     
     const supabaseClient = createClient(
@@ -173,6 +243,31 @@ serve(async (req) => {
         return new Response(JSON.stringify({
           success: true,
           downloads
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      case 'setup_webhook': {
+        // Настройка webhook для бота
+        const webhookUrl = `https://hvzxsjoszgakugpstipe.supabase.co/functions/v1/telegram-stars/webhook`
+        
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: webhookUrl,
+            allowed_updates: ['message', 'successful_payment', 'pre_checkout_query']
+          })
+        })
+
+        const result = await response.json()
+        console.log('🔗 Webhook setup result:', result)
+
+        return new Response(JSON.stringify({
+          success: result.ok,
+          description: result.description,
+          webhook_url: webhookUrl
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })

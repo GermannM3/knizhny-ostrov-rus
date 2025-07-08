@@ -22,6 +22,7 @@ import PurchasedBooksPage from "./pages/PurchasedBooksPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import NotFound from "./pages/NotFound";
 import TorrentLibrary from "./pages/TorrentLibrary";
+import TelegramSetup from "./pages/TelegramSetup";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ function App() {
                 <Route path="/purchased" element={<PurchasedBooksPage />} />
                 <Route path="/favorites" element={<FavoritesPage />} />
                 <Route path="/torrent-library" element={<TorrentLibrary />} />
+                <Route path="/telegram-setup" element={<TelegramSetup />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

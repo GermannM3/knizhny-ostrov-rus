@@ -172,6 +172,44 @@ bot.hears(/^\/read (.+)/, async (ctx) => {
   }
 })
 
+// Команда /setup - настройка webhook для Stars
+bot.command('setup', async (ctx) => {
+  if (ctx.from?.id !== 389694638) {
+    await ctx.reply('❌ Только администратор может выполнить эту команду')
+    return
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('telegram-stars', {
+      body: { action: 'setup_webhook' }
+    })
+
+    if (error) throw error
+
+    if (data.success) {
+      await ctx.reply(`✅ Webhook настроен успешно!\n\nURL: ${data.webhook_url}`)
+    } else {
+      await ctx.reply(`❌ Ошибка настройки webhook: ${data.description}`)
+    }
+  } catch (error: any) {
+    await ctx.reply(`❌ Ошибка: ${error.message}`)
+  }
+})
+
+// Команда /library - открыть библиотеку торрентов
+bot.command('library', async (ctx) => {
+  await ctx.reply('📚 Откройте библиотеку торрентов:', {
+    reply_markup: {
+      inline_keyboard: [[
+        {
+          text: '📚 Библиотека торрентов',
+          web_app: { url: `${WEBAPP_URL}/torrent-library` }
+        }
+      ]]
+    }
+  })
+})
+
 // Команда помощи и неизвестные команды
 bot.on('message', async (ctx) => {
   if (ctx.message.text?.startsWith('/')) {
@@ -181,7 +219,9 @@ bot.on('message', async (ctx) => {
 /start - Главное меню
 /mybooks - Мои книги  
 /popular - Популярные книги
+/library - Библиотека торрентов (Stars)
 /read <book_id> - Читать книгу
+/setup - Настроить webhook (только админ)
 
 Или используйте кнопку для запуска приложения:`,
       {
