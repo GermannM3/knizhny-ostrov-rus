@@ -114,7 +114,7 @@ export default function TelegramAuthComponent({ onAuthSuccess }: TelegramAuthCom
 
   const handleTelegramAuth = () => {
     // Открываем авторизацию Telegram в новом окне
-    const botUsername = 'BookCraftBot'; // Замените на имя вашего бота
+    const botUsername = 'BookCraft_Russ_bot'; // Ваш бот
     const returnUrl = encodeURIComponent(`${window.location.origin}/auth`);
     const telegramAuthUrl = `https://t.me/${botUsername}?start=auth_${Date.now()}`;
     
