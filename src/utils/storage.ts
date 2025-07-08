@@ -197,15 +197,15 @@ export const loginUser = (email: string, password: string): User | null => {
   console.log('🔐 Попытка входа с:', { email, password });
   
   // Специальная проверка для админа
-  if (email === 'admin@bookcraft.ru' && password === 'admin123') {
+  if (email === 'germannm@vk.com' && password === 'Germ@nnM3') {
     console.log('🔑 Админский вход - создаем/обновляем пользователя');
     
     let adminUser = users.find(u => u.email === email);
     if (!adminUser) {
       // Создаем админского пользователя
       adminUser = createUser({
-        email: 'admin@bookcraft.ru',
-        password: 'admin123',
+        email: 'germannm@vk.com',
+        password: 'Germ@nnM3',
         name: 'Герман - Админ',
         telegram_id: 389694638
       });
