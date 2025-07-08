@@ -58,6 +58,38 @@ export type Database = {
           },
         ]
       }
+      book_downloads: {
+        Row: {
+          book_id: string | null
+          completed_at: string | null
+          file_url: string
+          id: string
+          user_id: number | null
+        }
+        Insert: {
+          book_id?: string | null
+          completed_at?: string | null
+          file_url: string
+          id?: string
+          user_id?: number | null
+        }
+        Update: {
+          book_id?: string | null
+          completed_at?: string | null
+          file_url?: string
+          id?: string
+          user_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_downloads_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "torrent_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           author_id: string | null
@@ -396,6 +428,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      payment_invoices: {
+        Row: {
+          book_id: string | null
+          created_at: string | null
+          id: string
+          stars_amount: number
+          status: string | null
+          user_id: number
+        }
+        Insert: {
+          book_id?: string | null
+          created_at?: string | null
+          id?: string
+          stars_amount?: number
+          status?: string | null
+          user_id: number
+        }
+        Update: {
+          book_id?: string | null
+          created_at?: string | null
+          id?: string
+          stars_amount?: number
+          status?: string | null
+          user_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_invoices_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "torrent_books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       position_tracking: {
         Row: {
@@ -909,6 +976,62 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      telegram_payments: {
+        Row: {
+          id: string
+          invoice_id: string | null
+          paid_at: string | null
+          payment_id: string | null
+        }
+        Insert: {
+          id?: string
+          invoice_id?: string | null
+          paid_at?: string | null
+          payment_id?: string | null
+        }
+        Update: {
+          id?: string
+          invoice_id?: string | null
+          paid_at?: string | null
+          payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "payment_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      torrent_books: {
+        Row: {
+          created_at: string | null
+          id: string
+          magnet_link: string
+          seeds: number | null
+          size: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          magnet_link: string
+          seeds?: number | null
+          size?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          magnet_link?: string
+          seeds?: number | null
+          size?: string | null
+          title?: string
+        }
+        Relationships: []
       }
       user_projects: {
         Row: {
