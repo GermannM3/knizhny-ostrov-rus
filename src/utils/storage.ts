@@ -193,6 +193,31 @@ export const updateUser = (id: string, updates: Partial<User>): User | null => {
 
 export const loginUser = (email: string, password: string): User | null => {
   const users = getUsers();
+  console.log('🔍 Все пользователи в localStorage:', users);
+  console.log('🔐 Попытка входа с:', { email, password });
+  
+  // Специальная проверка для админа
+  if (email === 'admin@bookcraft.ru' && password === 'admin123') {
+    console.log('🔑 Админский вход - создаем/обновляем пользователя');
+    
+    let adminUser = users.find(u => u.email === email);
+    if (!adminUser) {
+      // Создаем админского пользователя
+      adminUser = createUser({
+        email: 'admin@bookcraft.ru',
+        password: 'admin123',
+        name: 'Герман - Админ',
+        telegram_id: 389694638
+      });
+      console.log('✅ Создан новый админский пользователь:', adminUser);
+    } else {
+      console.log('✅ Найден существующий админский пользователь:', adminUser);
+    }
+    
+    setCurrentUser(adminUser);
+    return adminUser;
+  }
+  
   const user = users.find(u => u.email === email && u.password === password);
   
   if (user) {
