@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN') || '8071472545:AAEJ8YYW26LfJpJg_pcbXDCs9sJnAFiDYhk'
-const WEBAPP_URL = 'https://knizhny-ostrov-rus.lovable.app/library'
+const WEBAPP_URL = 'https://knizhny-ostrov-rus.lovable.app'
 
 const bot = new Bot(TELEGRAM_BOT_TOKEN)
 const supabase = createClient(
@@ -47,7 +47,7 @@ bot.command('start', async (ctx) => {
         inline_keyboard: [[
           {
             text: '🚀 Открыть BookCraft',
-            web_app: { url: WEBAPP_URL }
+            web_app: { url: `${WEBAPP_URL}/library` }
           }
         ]]
       }
@@ -226,12 +226,12 @@ bot.on('message', async (ctx) => {
 Или используйте кнопку для запуска приложения:`,
       {
         reply_markup: {
-          inline_keyboard: [[
-            {
-              text: '🚀 Открыть BookCraft',
-              web_app: { url: WEBAPP_URL }
-            }
-          ]]
+        inline_keyboard: [[
+          {
+            text: '🚀 Открыть BookCraft',
+            web_app: { url: `${WEBAPP_URL}/library` }
+          }
+        ]]
         }
       }
     )

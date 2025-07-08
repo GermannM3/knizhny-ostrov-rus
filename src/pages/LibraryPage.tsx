@@ -4,6 +4,7 @@ import { Book, User } from '@/types';
 import BookCard from '@/components/BookCard';
 import Navigation from '@/components/Navigation';
 import LibgenSearch from '@/components/LibgenSearch';
+import WebhookSetup from '@/components/WebhookSetup';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -165,6 +166,11 @@ const LibraryPage = () => {
         <div className="flex items-center space-x-3 mb-8">
           <BookOpen className="h-8 w-8 text-amber-400" />
           <h1 className="text-3xl font-bold text-white">Библиотека</h1>
+        </div>
+
+        {/* Настройка webhook */}
+        <div className="mb-6">
+          <WebhookSetup />
         </div>
 
         {/* Поиск книг через Libgen */}

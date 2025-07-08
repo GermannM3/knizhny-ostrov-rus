@@ -32,100 +32,28 @@ export default function LibgenSearch() {
 
     setLoading(true);
     try {
-      // Пробуем разные прокси для обхода CORS
-      const proxies = [
-        'https://api.allorigins.win/raw?url=',
-        'https://corsproxy.io/?',
-        'https://cors-anywhere.herokuapp.com/'
-      ];
+      // Создаем edge функцию для обхода CORS
+      console.log('🔍 Начинаем поиск книг через Libgen...');
       
-      const libgenUrl = `https://libgen.rs/search.php?req=${encodeURIComponent(query)}&res=10&sort=year&sortmode=DESC`;
-      
-      let response;
-      let lastError;
-      
-      for (const proxyUrl of proxies) {
-        try {
-          console.log(`🔍 Пробуем прокси: ${proxyUrl}`);
-          response = await fetch(proxyUrl + encodeURIComponent(libgenUrl), {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-          });
-          
-          if (response.ok) {
-            console.log(`✅ Успешный ответ от ${proxyUrl}`);
-            break;
-          } else {
-            console.log(`❌ Ошибка от ${proxyUrl}: ${response.status}`);
-          }
-        } catch (error) {
-          console.log(`❌ Ошибка прокси ${proxyUrl}:`, error);
-          lastError = error;
-          continue;
-        }
-      }
-      
-      if (!response || !response.ok) {
-        throw new Error(`Все прокси недоступны. Последняя ошибка: ${lastError}`);
-      }
-      const html = await response.text();
-      
-      // Парсим HTML для извлечения информации о книгах
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const rows = doc.querySelectorAll('table[width="100%"] tr');
-      
-      const books: LibgenBook[] = [];
-      
-      rows.forEach((row, index) => {
-        if (index === 0) return; // Пропускаем заголовок
-        
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 9) {
-          const titleCell = cells[2];
-          const authorCell = cells[1];
-          const sizeCell = cells[7];
-          const formatCell = cells[8];
-          
-          const titleLink = titleCell.querySelector('a');
-          const downloadLinks = cells[9]?.querySelectorAll('a') || [];
-          
-          if (titleLink) {
-            const title = titleLink.textContent?.trim() || 'Неизвестно';
-            const author = authorCell.textContent?.trim() || 'Неизвестно';
-            const size = sizeCell.textContent?.trim() || '';
-            const format = formatCell.textContent?.trim() || '';
-            
-            let downloadLink = '';
-            let torrentLink = '';
-            
-            downloadLinks.forEach(link => {
-              const href = link.getAttribute('href');
-              const text = link.textContent?.toLowerCase();
-              
-              if (href) {
-                if (text?.includes('get') || text?.includes('download')) {
-                  downloadLink = href.startsWith('http') ? href : `https://libgen.rs${href}`;
-                } else if (text?.includes('torrent')) {
-                  torrentLink = href.startsWith('http') ? href : `https://libgen.rs${href}`;
-                }
-              }
-            });
-
-            if (downloadLink) {
-              books.push({
-                title,
-                author,
-                size,
-                format,
-                downloadLink,
-                torrentLink
-              });
-            }
-          }
-        }
+      const response = await fetch('https://48cd7bea-154b-4d35-b5f0-105caa1889cd.supabase.co/functions/v1/libgen-search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ query })
       });
+      
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('❌ Ошибка API:', errorData);
+        throw new Error('Ошибка поиска книг');
+      }
+      
+      const data = await response.json();
+      console.log('✅ Получены результаты:', data);
+      
+      // Используем данные от API
+      const books = data.books || [];
       
       setResults(books);
       
