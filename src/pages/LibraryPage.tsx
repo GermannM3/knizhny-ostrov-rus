@@ -3,6 +3,7 @@ import { getPublishedBooks, getUsers, getBooks } from '@/utils/storage';
 import { Book, User } from '@/types';
 import BookCard from '@/components/BookCard';
 import Navigation from '@/components/Navigation';
+import LibgenSearch from '@/components/LibgenSearch';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -166,7 +167,12 @@ const LibraryPage = () => {
           <h1 className="text-3xl font-bold text-white">Библиотека</h1>
         </div>
 
-        {/* Фильтры и поиск */}
+        {/* Поиск книг через Libgen */}
+        <div className="mb-8">
+          <LibgenSearch />
+        </div>
+
+        {/* Фильтры и поиск локальных книг */}
         <div className="glass-card p-6 mb-8 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
