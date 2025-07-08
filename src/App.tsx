@@ -21,6 +21,7 @@ import OtherAuthorsPage from "./pages/OtherAuthorsPage";
 import PurchasedBooksPage from "./pages/PurchasedBooksPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import NotFound from "./pages/NotFound";
+import TorrentLibrary from "./pages/TorrentLibrary";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ function App() {
                 <Route path="/other-authors" element={<OtherAuthorsPage />} />
                 <Route path="/purchased" element={<PurchasedBooksPage />} />
                 <Route path="/favorites" element={<FavoritesPage />} />
+                <Route path="/torrent-library" element={<TorrentLibrary />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
