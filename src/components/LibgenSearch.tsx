@@ -32,11 +32,43 @@ export default function LibgenSearch() {
 
     setLoading(true);
     try {
-      // Используем публичный прокси для обхода CORS
-      const proxyUrl = 'https://api.allorigins.win/raw?url=';
+      // Пробуем разные прокси для обхода CORS
+      const proxies = [
+        'https://api.allorigins.win/raw?url=',
+        'https://corsproxy.io/?',
+        'https://cors-anywhere.herokuapp.com/'
+      ];
+      
       const libgenUrl = `https://libgen.rs/search.php?req=${encodeURIComponent(query)}&res=10&sort=year&sortmode=DESC`;
       
-      const response = await fetch(proxyUrl + encodeURIComponent(libgenUrl));
+      let response;
+      let lastError;
+      
+      for (const proxyUrl of proxies) {
+        try {
+          console.log(`🔍 Пробуем прокси: ${proxyUrl}`);
+          response = await fetch(proxyUrl + encodeURIComponent(libgenUrl), {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+          });
+          
+          if (response.ok) {
+            console.log(`✅ Успешный ответ от ${proxyUrl}`);
+            break;
+          } else {
+            console.log(`❌ Ошибка от ${proxyUrl}: ${response.status}`);
+          }
+        } catch (error) {
+          console.log(`❌ Ошибка прокси ${proxyUrl}:`, error);
+          lastError = error;
+          continue;
+        }
+      }
+      
+      if (!response || !response.ok) {
+        throw new Error(`Все прокси недоступны. Последняя ошибка: ${lastError}`);
+      }
       const html = await response.text();
       
       // Парсим HTML для извлечения информации о книгах
